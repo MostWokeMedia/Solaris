@@ -2,8 +2,16 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { usePlaidLink } from 'react-plaid-link';
 import CategoryManager from '@/components/shared/CategoryManager';
 import type { Category } from '@/types';
+
+type BankConnection = {
+  id: string;
+  institution_name: string;
+  last_synced: string | null;
+  created_at: string;
+};
 
 const inputStyle = "w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition-colors focus:border-blue-500";
 const inputColors = { background: '#0A0E17', borderColor: '#1E293B', color: '#E2E8F0' };
@@ -19,22 +27,86 @@ export default function SettingsPage() {
   // Stats
   const [stats, setStats] = useState({ txnCount: 0, billCount: 0, acctCount: 0 });
 
+  // Plaid
+  const [connections, setConnections] = useState<BankConnection[]>([]);
+  const [linkToken, setLinkToken] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState<string | null>(null);
+  const [syncResult, setSyncResult] = useState<{ id: string; message: string } | null>(null);
+  const [confirmDisconnect, setConfirmDisconnect] = useState<string | null>(null);
+
   const loadData = useCallback(async () => {
-    const [{ data: catData }, { data: txnData }, { data: { user } }, { count: billCount }, { count: acctCount }] = await Promise.all([
+    const [{ data: catData }, { data: txnData }, { data: { user } }, { count: billCount }, { count: acctCount }, { data: connData }] = await Promise.all([
       supabase.from('categories').select('*').order('type').order('sort_order'),
       supabase.from('transactions').select('category_id'),
       supabase.auth.getUser(),
       supabase.from('recurring_bills').select('*', { count: 'exact', head: true }),
       supabase.from('allocation_accounts').select('*', { count: 'exact', head: true }),
+      supabase.from('bank_connections').select('id, institution_name, last_synced, created_at').order('created_at'),
     ]);
     setCategories(catData || []);
     setTransactions(txnData || []);
     setUserEmail(user?.email || '');
     setStats({ txnCount: txnData?.length || 0, billCount: billCount || 0, acctCount: acctCount || 0 });
+    setConnections(connData || []);
     setLoading(false);
   }, []);
 
   useEffect(() => { loadData(); }, [loadData]);
+
+  // Plaid Link
+  async function handleConnectBank() {
+    const res = await fetch('/api/plaid/create-link', { method: 'POST' });
+    if (res.ok) {
+      const { link_token } = await res.json();
+      setLinkToken(link_token);
+    }
+  }
+
+  async function handlePlaidSuccess(publicToken: string, metadata: { institution?: { name?: string; institution_id?: string } | null }) {
+    await fetch('/api/plaid/exchange-token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        public_token: publicToken,
+        institution: metadata.institution,
+      }),
+    });
+    setLinkToken(null);
+    loadData();
+  }
+
+  async function handleSync(connectionId: string) {
+    setSyncing(connectionId);
+    setSyncResult(null);
+    try {
+      const res = await fetch('/api/plaid/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ connection_id: connectionId }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setSyncResult({
+          id: connectionId,
+          message: data.imported > 0
+            ? `Imported ${data.imported} new transactions (${data.duplicates_skipped} duplicates skipped)`
+            : 'No new transactions found',
+        });
+        loadData();
+      } else {
+        setSyncResult({ id: connectionId, message: data.error || 'Sync failed' });
+      }
+    } catch {
+      setSyncResult({ id: connectionId, message: 'Sync failed' });
+    }
+    setSyncing(null);
+  }
+
+  async function handleDisconnect(connectionId: string) {
+    await supabase.from('bank_connections').delete().eq('id', connectionId);
+    setConfirmDisconnect(null);
+    loadData();
+  }
 
   const txnCounts = transactions.reduce((acc, t) => {
     if (t.category_id) acc[t.category_id] = (acc[t.category_id] || 0) + 1;
@@ -153,15 +225,91 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Data Management */}
+        {/* Bank Connections */}
         <div className="rounded-xl border p-5" style={{ background: '#111827', borderColor: '#1E293B' }}>
-          <h3 className="mb-4 text-sm font-semibold" style={{ fontFamily: "'Space Mono', monospace", color: '#94A3B8' }}>
-            Bank Connections
-          </h3>
-          <p className="text-xs" style={{ color: '#475569' }}>
-            Plaid bank sync coming soon. Use CSV import in the Transactions page for now.
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-sm font-semibold" style={{ fontFamily: "'Space Mono', monospace", color: '#94A3B8' }}>
+              Bank Connections
+            </h3>
+            <button
+              onClick={handleConnectBank}
+              className="rounded-lg border-none px-3 py-1.5 text-xs font-semibold text-white"
+              style={{ background: 'linear-gradient(135deg, #3B82F6, #2563EB)', cursor: 'pointer' }}
+            >
+              + Connect Bank
+            </button>
+          </div>
+
+          {connections.length === 0 ? (
+            <p className="text-xs" style={{ color: '#475569' }}>
+              No banks connected. Click &ldquo;Connect Bank&rdquo; to link your accounts via Plaid.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {connections.map((conn) => (
+                <div key={conn.id} className="rounded-lg border px-4 py-3" style={{ borderColor: '#1E293B' }}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-sm font-medium" style={{ color: '#E2E8F0' }}>{conn.institution_name}</div>
+                      <div className="mt-0.5 text-[10px]" style={{ color: '#64748B' }}>
+                        {conn.last_synced
+                          ? `Last synced: ${new Date(conn.last_synced).toLocaleDateString()} ${new Date(conn.last_synced).toLocaleTimeString()}`
+                          : 'Never synced'}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleSync(conn.id)}
+                        disabled={syncing === conn.id}
+                        className="rounded-lg border px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
+                        style={{ borderColor: '#1E293B', color: '#34D399', background: 'transparent', cursor: 'pointer' }}
+                      >
+                        {syncing === conn.id ? 'Syncing...' : 'Sync'}
+                      </button>
+                      {confirmDisconnect === conn.id ? (
+                        <div className="flex items-center gap-1">
+                          <span className="text-[10px]" style={{ color: '#F87171' }}>Sure?</span>
+                          <button onClick={() => handleDisconnect(conn.id)}
+                            className="rounded border px-2 py-0.5 text-[10px] font-semibold"
+                            style={{ borderColor: '#F8717133', color: '#F87171', background: 'transparent', cursor: 'pointer' }}>Yes</button>
+                          <button onClick={() => setConfirmDisconnect(null)}
+                            className="rounded border px-2 py-0.5 text-[10px] font-semibold"
+                            style={{ borderColor: '#1E293B', color: '#64748B', background: 'transparent', cursor: 'pointer' }}>No</button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setConfirmDisconnect(conn.id)}
+                          className="border-none bg-transparent px-1.5 py-0.5 text-xs"
+                          style={{ color: '#64748B', cursor: 'pointer' }}
+                        >
+                          &#x2715;
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  {syncResult?.id === conn.id && (
+                    <div className="mt-2 rounded-md px-3 py-2 text-xs"
+                      style={{
+                        background: syncResult.message.includes('Imported') ? '#0D3B2E' : '#1E293B',
+                        color: syncResult.message.includes('Imported') ? '#34D399' : '#94A3B8',
+                      }}>
+                      {syncResult.message}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          <p className="mt-3 text-[10px]" style={{ color: '#334155' }}>
+            Transactions are automatically categorized by AI on sync. Duplicates are skipped.
           </p>
         </div>
+
+        {/* Plaid Link (invisible until triggered) */}
+        {linkToken && (
+          <PlaidLinkButton linkToken={linkToken} onSuccess={handlePlaidSuccess} onExit={() => setLinkToken(null)} />
+        )}
 
         {/* About */}
         <div className="rounded-xl border p-5" style={{ background: '#111827', borderColor: '#1E293B' }}>
@@ -189,4 +337,31 @@ export default function SettingsPage() {
       />
     </div>
   );
+}
+
+// Separate component because usePlaidLink needs the token at render time
+function PlaidLinkButton({
+  linkToken,
+  onSuccess,
+  onExit,
+}: {
+  linkToken: string;
+  onSuccess: (publicToken: string, metadata: { institution?: { name?: string; institution_id?: string } | null }) => void;
+  onExit: () => void;
+}) {
+  const { open, ready } = usePlaidLink({
+    token: linkToken,
+    onSuccess: (public_token, metadata) => {
+      onSuccess(public_token, metadata);
+    },
+    onExit: () => {
+      onExit();
+    },
+  });
+
+  useEffect(() => {
+    if (ready) open();
+  }, [ready, open]);
+
+  return null;
 }
