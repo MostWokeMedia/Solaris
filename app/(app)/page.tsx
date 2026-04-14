@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import Card from '@/components/shared/Card';
+import { DashboardSkeleton } from '@/components/shared/Skeleton';
 import { formatMoney, formatMoneyShort } from '@/lib/utils/money';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
@@ -126,13 +127,7 @@ export default function DashboardPage() {
       .sort((a, b) => b.actual - a.actual);
   }, [categories, allocationAccounts, allocationPeriods, recurringBills, transactions]);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <div className="text-sm" style={{ color: '#64748B' }}>Loading dashboard...</div>
-      </div>
-    );
-  }
+  if (loading) return <DashboardSkeleton />;
 
   return (
     <div>
