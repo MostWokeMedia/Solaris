@@ -11,7 +11,7 @@ import type { RecurringBill, Category } from '@/types';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const STATUSES: Array<'good' | 'paused' | 'cancelled'> = ['good', 'paused', 'cancelled'];
-const PAYMENT_SOURCES = ['Wells Fargo', 'Chase Card', 'Discover Card', 'Master Card', 'Banana Stand'];
+const DEFAULT_SOURCES = ['Wells Fargo', 'Chase Card', 'Discover Card', 'Master Card', 'Banana Stand'];
 
 const CARDS = [
   { name: 'Discover', purpose: 'Large buys / Extended debt', bonus: '2% Gas & Restaurant, 1% everything else', limit: 3300, payRange: '$33–$99', payDate: 'The 9th', color: '#FF6600' },
@@ -43,6 +43,12 @@ export default function RecurringPage() {
     category_id: '', paid_from: 'Wells Fargo', note: '',
   });
 
+  const [showSourceMgr, setShowSourceMgr] = useState(false);
+  const [customSources, setCustomSources] = useState<string[]>([]);
+  const [newSource, setNewSource] = useState('');
+  const [editSourceIdx, setEditSourceIdx] = useState<number | null>(null);
+  const [editSourceName, setEditSourceName] = useState('');
+
   const loadData = useCallback(async () => {
     const [{ data: billData }, { data: catData }] = await Promise.all([
       supabase.from('recurring_bills').select('*, category:categories(*)').order('amount', { ascending: false }),
@@ -54,6 +60,46 @@ export default function RecurringPage() {
   }, []);
 
   useEffect(() => { loadData(); }, [loadData]);
+
+  // Load custom sources from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('solaris_payment_sources');
+    if (saved) setCustomSources(JSON.parse(saved));
+  }, []);
+
+  // Build dynamic payment sources: defaults + custom + any from existing bills
+  const paymentSources = useMemo(() => {
+    const all = new Set([...DEFAULT_SOURCES, ...customSources]);
+    bills.forEach((b) => { if (b.paid_from) all.add(b.paid_from); });
+    return Array.from(all).sort();
+  }, [bills, customSources]);
+
+  function saveCustomSources(sources: string[]) {
+    setCustomSources(sources);
+    localStorage.setItem('solaris_payment_sources', JSON.stringify(sources));
+  }
+
+  function handleAddSource() {
+    if (!newSource.trim() || paymentSources.includes(newSource.trim())) return;
+    saveCustomSources([...customSources, newSource.trim()]);
+    setNewSource('');
+  }
+
+  function handleRenameSource(oldName: string, newName: string) {
+    if (!newName.trim() || newName === oldName) { setEditSourceIdx(null); return; }
+    // Update custom sources list
+    saveCustomSources(customSources.map((s) => s === oldName ? newName.trim() : s));
+    // Update all bills with this source
+    bills.filter((b) => b.paid_from === oldName).forEach(async (b) => {
+      await supabase.from('recurring_bills').update({ paid_from: newName.trim() }).eq('id', b.id);
+    });
+    setEditSourceIdx(null);
+    loadData();
+  }
+
+  function handleDeleteSource(name: string) {
+    saveCustomSources(customSources.filter((s) => s !== name));
+  }
 
   const filtered = filter === 'All' ? bills : bills.filter((b) => b.status === filter);
 
@@ -149,13 +195,22 @@ export default function RecurringPage() {
             Click a row to edit &middot; Tap status badges to cycle
           </p>
         </div>
-        <button
-          onClick={() => setShowAdd(true)}
-          className="flex items-center gap-1.5 rounded-lg border-none px-4 py-2 text-xs font-semibold text-white"
-          style={{ background: 'linear-gradient(135deg, #3B82F6, #2563EB)', cursor: 'pointer' }}
-        >
-          <span className="text-lg leading-none">+</span> Add Expense
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowSourceMgr(true)}
+            className="rounded-lg border-none px-4 py-2 text-xs font-semibold text-white"
+            style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', cursor: 'pointer' }}
+          >
+            Payment Sources
+          </button>
+          <button
+            onClick={() => setShowAdd(true)}
+            className="flex items-center gap-1.5 rounded-lg border-none px-4 py-2 text-xs font-semibold text-white"
+            style={{ background: 'linear-gradient(135deg, #3B82F6, #2563EB)', cursor: 'pointer' }}
+          >
+            <span className="text-lg leading-none">+</span> Add Expense
+          </button>
+        </div>
       </div>
 
       {/* Summary Cards */}
@@ -318,7 +373,7 @@ export default function RecurringPage() {
               <Field label="Paid From">
                 <select className={inputStyle} style={{ ...inputColors, cursor: 'pointer' }} value={editBill.paid_from || ''}
                   onChange={(e) => setEditBill({ ...editBill, paid_from: e.target.value })}>
-                  {PAYMENT_SOURCES.map((s) => <option key={s} value={s}>{s}</option>)}
+                  {paymentSources.map((s) => <option key={s} value={s}>{s}</option>)}
                 </select>
               </Field>
             </div>
@@ -391,7 +446,7 @@ export default function RecurringPage() {
           <Field label="Paid From">
             <select className={inputStyle} style={{ ...inputColors, cursor: 'pointer' }} value={newBill.paid_from}
               onChange={(e) => setNewBill({ ...newBill, paid_from: e.target.value })}>
-              {PAYMENT_SOURCES.map((s) => <option key={s} value={s}>{s}</option>)}
+              {paymentSources.map((s) => <option key={s} value={s}>{s}</option>)}
             </select>
           </Field>
         </div>
@@ -422,6 +477,85 @@ export default function RecurringPage() {
             Add Expense
           </button>
         </div>
+      </Modal>
+
+      {/* Payment Sources Modal */}
+      <Modal open={showSourceMgr} onClose={() => { setShowSourceMgr(false); setEditSourceIdx(null); }} title="Manage Payment Sources">
+        <div className="mb-4 flex gap-2">
+          <input
+            className={inputStyle + ' flex-1'}
+            style={inputColors}
+            placeholder="New payment source..."
+            value={newSource}
+            onChange={(e) => setNewSource(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleAddSource(); }}
+          />
+          <button
+            onClick={handleAddSource}
+            className="rounded-lg border-none px-4 py-2 text-sm font-semibold text-white"
+            style={{ background: 'linear-gradient(135deg, #3B82F6, #2563EB)', cursor: 'pointer', opacity: newSource.trim() ? 1 : 0.4 }}
+          >
+            + Add
+          </button>
+        </div>
+
+        {paymentSources.map((source, i) => {
+          const billCount = bills.filter((b) => b.paid_from === source).length;
+          const isDefault = DEFAULT_SOURCES.includes(source);
+          const isCustom = customSources.includes(source);
+
+          return (
+            <div
+              key={source}
+              className="flex items-center gap-2.5 rounded-md px-3 py-2 transition-colors hover:bg-[#1A2332]"
+              style={{ borderBottom: '1px solid #1E293B22' }}
+            >
+              {editSourceIdx === i ? (
+                <input
+                  className={inputStyle + ' flex-1'}
+                  style={{ ...inputColors, padding: '4px 8px', fontSize: 12 }}
+                  autoFocus
+                  value={editSourceName}
+                  onChange={(e) => setEditSourceName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleRenameSource(source, editSourceName);
+                    if (e.key === 'Escape') setEditSourceIdx(null);
+                  }}
+                  onBlur={() => handleRenameSource(source, editSourceName)}
+                />
+              ) : (
+                <span className="flex-1 text-[13px]" style={{ color: '#CBD5E1' }}>{source}</span>
+              )}
+              <span className="text-[10px]" style={{ color: '#475569' }}>{billCount} bills</span>
+              {isDefault && !isCustom && (
+                <span className="text-[9px]" style={{ color: '#334155' }}>default</span>
+              )}
+              {(isCustom || !isDefault) && (
+                <>
+                  <button
+                    onClick={() => { setEditSourceIdx(i); setEditSourceName(source); }}
+                    className="border-none bg-transparent px-1.5 py-0.5 text-xs"
+                    style={{ color: '#64748B', cursor: 'pointer' }}
+                  >
+                    &#x270E;
+                  </button>
+                  <button
+                    onClick={() => handleDeleteSource(source)}
+                    className="border-none bg-transparent px-1.5 py-0.5 text-xs"
+                    style={{ color: '#64748B', cursor: 'pointer' }}
+                  >
+                    &#x2715;
+                  </button>
+                </>
+              )}
+            </div>
+          );
+        })}
+
+        <p className="mt-4 text-[10px]" style={{ color: '#334155' }}>
+          Default sources are always available. Custom sources can be edited or removed.
+          Sources used by existing bills will appear automatically.
+        </p>
       </Modal>
     </div>
   );
