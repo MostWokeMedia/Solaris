@@ -5,13 +5,15 @@ import Modal from '@/components/shared/Modal';
 import Field from '@/components/shared/Field';
 import type { Category } from '@/types';
 
-const BANKS: Record<string, { date: string; desc: string; amount: string }> = {
-  'Generic CSV': { date: 'Date', desc: 'Description', amount: 'Amount' },
-  'Chase': { date: 'Posting Date', desc: 'Description', amount: 'Amount' },
-  'Wells Fargo': { date: 'Date', desc: 'Description', amount: 'Amount' },
-  'Bank of America': { date: 'Date', desc: 'Description', amount: 'Amount' },
-  'Discover': { date: 'Trans. Date', desc: 'Description', amount: 'Amount' },
-  'Capital One': { date: 'Transaction Date', desc: 'Description', amount: 'Debit' },
+const BANKS: Record<string, { date: string; desc: string; amount: string; isCreditCard: boolean }> = {
+  'Generic CSV': { date: 'Date', desc: 'Description', amount: 'Amount', isCreditCard: false },
+  'Chase (Checking)': { date: 'Posting Date', desc: 'Description', amount: 'Amount', isCreditCard: false },
+  'Chase (Credit Card)': { date: 'Posting Date', desc: 'Description', amount: 'Amount', isCreditCard: true },
+  'Wells Fargo': { date: 'Date', desc: 'Description', amount: 'Amount', isCreditCard: false },
+  'Bank of America': { date: 'Date', desc: 'Description', amount: 'Amount', isCreditCard: false },
+  'Discover (Credit Card)': { date: 'Trans. Date', desc: 'Description', amount: 'Amount', isCreditCard: true },
+  'Capital One (Credit Card)': { date: 'Transaction Date', desc: 'Description', amount: 'Debit', isCreditCard: true },
+  'Master Card (Credit Card)': { date: 'Date', desc: 'Description', amount: 'Amount', isCreditCard: true },
 };
 
 const CONFIDENCE_COLORS = {
@@ -54,6 +56,7 @@ const inputColors = { background: '#0A0E17', borderColor: '#1E293B', color: '#E2
 
 export default function CsvImport({ open, onClose, onImport, categories }: Props) {
   const [bank, setBank] = useState('Generic CSV');
+  const [flipSigns, setFlipSigns] = useState(false);
   const [importData, setImportData] = useState<{ headers: string[]; rows: Record<string, string>[] } | null>(null);
   const [mapping, setMapping] = useState({ date: '', desc: '', amount: '' });
   const [preview, setPreview] = useState<Record<string, string>[]>([]);
@@ -79,6 +82,12 @@ export default function CsvImport({ open, onClose, onImport, categories }: Props
     setSuggestions([]);
     setReviewRows([]);
     setAiError('');
+    setFlipSigns(false);
+  }
+
+  function handleBankChange(newBank: string) {
+    setBank(newBank);
+    setFlipSigns(BANKS[newBank]?.isCreditCard ?? false);
   }
 
   function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
@@ -131,6 +140,7 @@ export default function CsvImport({ open, onClose, onImport, categories }: Props
         }
         let amt = parseFloat((row[mapping.amount] || '0').replace(/[$,]/g, ''));
         if (isNaN(amt)) amt = 0;
+        if (flipSigns) amt = -amt;
         return { date: dateStr, description: row[mapping.desc] || 'Unknown', amount: amt };
       })
       .filter((t) => t.date && t.amount !== 0);
@@ -231,11 +241,44 @@ export default function CsvImport({ open, onClose, onImport, categories }: Props
               className={inputStyle}
               style={{ ...inputColors, cursor: 'pointer' }}
               value={bank}
-              onChange={(e) => setBank(e.target.value)}
+              onChange={(e) => handleBankChange(e.target.value)}
             >
               {Object.keys(BANKS).map((b) => <option key={b}>{b}</option>)}
             </select>
           </Field>
+
+          {/* Flip signs toggle */}
+          <div
+            className="mb-4 flex items-center gap-3 rounded-lg border px-4 py-3"
+            style={{
+              borderColor: flipSigns ? '#FBBF2444' : '#1E293B',
+              background: flipSigns ? '#3B2E0D' : 'transparent',
+            }}
+          >
+            <button
+              onClick={() => setFlipSigns(!flipSigns)}
+              className="relative h-5 w-9 rounded-full transition-colors"
+              style={{ background: flipSigns ? '#FBBF24' : '#334155', cursor: 'pointer', border: 'none' }}
+            >
+              <div
+                className="absolute top-0.5 h-4 w-4 rounded-full transition-transform"
+                style={{
+                  background: '#E2E8F0',
+                  left: flipSigns ? 18 : 2,
+                }}
+              />
+            </button>
+            <div>
+              <div className="text-xs font-semibold" style={{ color: flipSigns ? '#FBBF24' : '#94A3B8' }}>
+                Credit Card Mode {flipSigns ? 'ON' : 'OFF'}
+              </div>
+              <div className="text-[10px]" style={{ color: '#64748B' }}>
+                {flipSigns
+                  ? 'Signs will be flipped: purchases → expenses, payments → positive'
+                  : 'Amounts imported as-is (use for checking/savings accounts)'}
+              </div>
+            </div>
+          </div>
 
           <Field label="Upload CSV">
             <input
