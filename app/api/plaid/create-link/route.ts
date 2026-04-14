@@ -20,8 +20,13 @@ export async function POST() {
     });
 
     return NextResponse.json({ link_token: response.data.link_token });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Plaid link token error:', error);
-    return NextResponse.json({ error: 'Failed to create link token' }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Failed to create link token';
+    // Check for missing credentials
+    if (!process.env.PLAID_CLIENT_ID || !process.env.PLAID_SECRET) {
+      return NextResponse.json({ error: 'Plaid credentials not configured. Add PLAID_CLIENT_ID and PLAID_SECRET to environment variables.' }, { status: 500 });
+    }
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

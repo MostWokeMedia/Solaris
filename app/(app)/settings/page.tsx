@@ -54,12 +54,24 @@ export default function SettingsPage() {
   useEffect(() => { loadData(); }, [loadData]);
 
   // Plaid Link
+  const [plaidError, setPlaidError] = useState('');
+  const [connecting, setConnecting] = useState(false);
+
   async function handleConnectBank() {
-    const res = await fetch('/api/plaid/create-link', { method: 'POST' });
-    if (res.ok) {
-      const { link_token } = await res.json();
-      setLinkToken(link_token);
+    setPlaidError('');
+    setConnecting(true);
+    try {
+      const res = await fetch('/api/plaid/create-link', { method: 'POST' });
+      const data = await res.json();
+      if (res.ok && data.link_token) {
+        setLinkToken(data.link_token);
+      } else {
+        setPlaidError(data.error || 'Failed to connect. Check Plaid credentials in environment variables.');
+      }
+    } catch (err) {
+      setPlaidError('Network error — could not reach the server.');
     }
+    setConnecting(false);
   }
 
   async function handlePlaidSuccess(publicToken: string, metadata: { institution?: { name?: string; institution_id?: string } | null }) {
@@ -233,12 +245,20 @@ export default function SettingsPage() {
             </h3>
             <button
               onClick={handleConnectBank}
-              className="rounded-lg border-none px-3 py-1.5 text-xs font-semibold text-white"
+              disabled={connecting}
+              className="rounded-lg border-none px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
               style={{ background: 'linear-gradient(135deg, #3B82F6, #2563EB)', cursor: 'pointer' }}
             >
-              + Connect Bank
+              {connecting ? 'Connecting...' : '+ Connect Bank'}
             </button>
           </div>
+
+          {plaidError && (
+            <div className="mb-3 rounded-lg border px-4 py-3 text-xs"
+              style={{ background: '#3B0D1A', borderColor: '#F8717133', color: '#F87171' }}>
+              {plaidError}
+            </div>
+          )}
 
           {connections.length === 0 ? (
             <p className="text-xs" style={{ color: '#475569' }}>
