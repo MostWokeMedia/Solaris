@@ -13,12 +13,20 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 const STATUSES: Array<'good' | 'paused' | 'cancelled'> = ['good', 'paused', 'cancelled'];
 const DEFAULT_SOURCES = ['Wells Fargo', 'Chase Card', 'Discover Card', 'Master Card', 'Banana Stand'];
 
-const CARDS = [
-  { name: 'Discover', purpose: 'Large buys / Extended debt', bonus: '2% Gas & Restaurant, 1% everything else', limit: 3300, payRange: '$33–$99', payDate: 'The 9th', color: '#FF6600' },
-  { name: 'Chase', purpose: 'Amazon, Gas, Small buys', bonus: '6% Amazon Day, 5% Amazon & Chase Travel, 2% Gas/Restaurants, 1% other', limit: 2100, payRange: '$11–$33', payDate: 'The 13th', color: '#1A5276' },
-  { name: 'Wells Fargo', purpose: 'Recurring bills & buys', bonus: 'Unlimited 2%', limit: 2500, payRange: '$25–$75', payDate: 'The 23rd', color: '#C0392B' },
-  { name: 'Master Card', purpose: 'Food & Air Pump', bonus: 'None', limit: 300, payRange: '$3–$9', payDate: 'The 30th', color: '#7D3C98' },
-];
+const COLOR_OPTIONS = ['#FF6600', '#1A5276', '#C0392B', '#7D3C98', '#3B82F6', '#34D399', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
+
+type StrategyCard = {
+  id: string;
+  user_id: string;
+  name: string;
+  purpose: string | null;
+  bonus: string | null;
+  credit_limit: number;
+  pay_range: string | null;
+  pay_date: string | null;
+  color: string;
+  sort_order: number;
+};
 
 const inputStyle = "w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition-colors focus:border-blue-500";
 const inputColors = { background: '#0A0E17', borderColor: '#1E293B', color: '#E2E8F0' };
@@ -49,13 +57,24 @@ export default function RecurringPage() {
   const [editSourceIdx, setEditSourceIdx] = useState<number | null>(null);
   const [editSourceName, setEditSourceName] = useState('');
 
+  // Credit card strategy state
+  const [strategyCards, setStrategyCards] = useState<StrategyCard[]>([]);
+  const [editCard, setEditCard] = useState<StrategyCard | null>(null);
+  const [showAddCard, setShowAddCard] = useState(false);
+  const [confirmCardDel, setConfirmCardDel] = useState<string | null>(null);
+  const [newCard, setNewCard] = useState({
+    name: '', purpose: '', bonus: '', credit_limit: '', pay_range: '', pay_date: '', color: '#3B82F6',
+  });
+
   const loadData = useCallback(async () => {
-    const [{ data: billData }, { data: catData }] = await Promise.all([
+    const [{ data: billData }, { data: catData }, { data: cardData }] = await Promise.all([
       supabase.from('recurring_bills').select('*, category:categories(*)').order('amount', { ascending: false }),
       supabase.from('categories').select('*').order('sort_order'),
+      supabase.from('credit_card_strategy').select('*').order('sort_order'),
     ]);
     setBills(billData || []);
     setCategories(catData || []);
+    setStrategyCards(cardData || []);
     setLoading(false);
   }, []);
 
@@ -99,6 +118,49 @@ export default function RecurringPage() {
 
   function handleDeleteSource(name: string) {
     saveCustomSources(customSources.filter((s) => s !== name));
+  }
+
+  // Credit card strategy CRUD
+  async function handleAddStrategyCard() {
+    if (!newCard.name.trim()) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    await supabase.from('credit_card_strategy').insert({
+      user_id: user.id,
+      name: newCard.name,
+      purpose: newCard.purpose || null,
+      bonus: newCard.bonus || null,
+      credit_limit: parseFloat(newCard.credit_limit) || 0,
+      pay_range: newCard.pay_range || null,
+      pay_date: newCard.pay_date || null,
+      color: newCard.color,
+      sort_order: strategyCards.length,
+    });
+    setNewCard({ name: '', purpose: '', bonus: '', credit_limit: '', pay_range: '', pay_date: '', color: '#3B82F6' });
+    setShowAddCard(false);
+    loadData();
+  }
+
+  async function handleSaveStrategyCard() {
+    if (!editCard) return;
+    await supabase.from('credit_card_strategy').update({
+      name: editCard.name,
+      purpose: editCard.purpose,
+      bonus: editCard.bonus,
+      credit_limit: Number(editCard.credit_limit),
+      pay_range: editCard.pay_range,
+      pay_date: editCard.pay_date,
+      color: editCard.color,
+    }).eq('id', editCard.id);
+    setEditCard(null);
+    loadData();
+  }
+
+  async function handleDeleteStrategyCard(id: string) {
+    await supabase.from('credit_card_strategy').delete().eq('id', id);
+    setConfirmCardDel(null);
+    setEditCard(null);
+    loadData();
   }
 
   const filtered = filter === 'All' ? bills : bills.filter((b) => b.status === filter);
@@ -305,37 +367,64 @@ export default function RecurringPage() {
       </div>
 
       {/* Credit Card Strategy */}
-      <h2
-        className="mb-4 text-lg font-bold"
-        style={{ fontFamily: "'Space Mono', monospace", color: '#94A3B8' }}
-      >
-        Credit Card Strategy
-      </h2>
+      <div className="mb-4 flex items-center justify-between">
+        <h2
+          className="text-lg font-bold"
+          style={{ fontFamily: "'Space Mono', monospace", color: '#94A3B8' }}
+        >
+          Credit Card Strategy
+        </h2>
+        <button
+          onClick={() => setShowAddCard(true)}
+          className="flex items-center gap-1.5 rounded-lg border-none px-3 py-1.5 text-xs font-semibold text-white"
+          style={{ background: 'linear-gradient(135deg, #3B82F6, #2563EB)', cursor: 'pointer' }}
+        >
+          <span className="text-sm leading-none">+</span> Add Card
+        </button>
+      </div>
+
+      {strategyCards.length === 0 && (
+        <div className="rounded-xl border py-8 text-center text-sm" style={{ background: '#111827', borderColor: '#1E293B', color: '#475569' }}>
+          No credit cards added yet. Click &ldquo;Add Card&rdquo; to set up your strategy.
+        </div>
+      )}
+
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {CARDS.map((card, i) => (
+        {strategyCards.map((card) => (
           <div
-            key={i}
-            onClick={() => setExpandedCard(expandedCard === i ? null : i)}
-            className="cursor-pointer overflow-hidden rounded-xl border transition-colors"
+            key={card.id}
+            className="overflow-hidden rounded-xl border transition-colors"
             style={{ background: '#111827', borderColor: '#1E293B' }}
           >
             <div className="h-1" style={{ background: `linear-gradient(90deg, ${card.color}, ${card.color}88)` }} />
             <div className="px-4 py-4">
               <div className="flex items-center justify-between">
-                <div>
+                <div
+                  className="flex-1 cursor-pointer"
+                  onClick={() => setExpandedCard(expandedCard === card.sort_order ? null : card.sort_order)}
+                >
                   <div className="text-[15px] font-semibold" style={{ color: '#E2E8F0' }}>{card.name}</div>
                   <div className="mt-0.5 text-[11px]" style={{ color: '#64748B' }}>{card.purpose}</div>
                 </div>
-                <div className="text-[13px] font-bold" style={{ fontFamily: "'Space Mono', monospace", color: card.color }}>
-                  ${card.limit.toLocaleString()}
+                <div className="flex items-center gap-2">
+                  <div className="text-[13px] font-bold" style={{ fontFamily: "'Space Mono', monospace", color: card.color }}>
+                    ${Number(card.credit_limit).toLocaleString()}
+                  </div>
+                  <button
+                    onClick={() => setEditCard({ ...card })}
+                    className="border-none bg-transparent px-1 py-0.5 text-xs"
+                    style={{ color: '#64748B', cursor: 'pointer' }}
+                  >
+                    &#x270E;
+                  </button>
                 </div>
               </div>
-              {expandedCard === i && (
+              {expandedCard === card.sort_order && (
                 <div className="mt-3 border-t pt-3 text-xs leading-relaxed" style={{ borderColor: '#1E293B', color: '#94A3B8' }}>
-                  <div className="mb-2"><span style={{ color: '#64748B' }}>Rewards: </span>{card.bonus}</div>
+                  <div className="mb-2"><span style={{ color: '#64748B' }}>Rewards: </span>{card.bonus || 'None'}</div>
                   <div className="flex flex-wrap justify-between gap-2">
-                    <div><span style={{ color: '#64748B' }}>Target: </span><span className="font-semibold" style={{ color: '#E2E8F0' }}>{card.payRange}</span></div>
-                    <div><span style={{ color: '#64748B' }}>Due: </span><span className="font-semibold" style={{ color: '#E2E8F0' }}>{card.payDate}</span></div>
+                    <div><span style={{ color: '#64748B' }}>Target: </span><span className="font-semibold" style={{ color: '#E2E8F0' }}>{card.pay_range || '\u2014'}</span></div>
+                    <div><span style={{ color: '#64748B' }}>Due: </span><span className="font-semibold" style={{ color: '#E2E8F0' }}>{card.pay_date || '\u2014'}</span></div>
                   </div>
                 </div>
               )}
@@ -343,7 +432,9 @@ export default function RecurringPage() {
           </div>
         ))}
       </div>
-      <p className="mt-2 text-center text-[11px]" style={{ color: '#334155' }}>Tap a card to expand details</p>
+      {strategyCards.length > 0 && (
+        <p className="mt-2 text-center text-[11px]" style={{ color: '#334155' }}>Tap a card to expand &middot; Click &#x270E; to edit</p>
+      )}
 
       {/* Edit Modal */}
       <Modal open={!!editBill} onClose={() => { setEditBill(null); setConfirmDel(null); }} title="Edit Expense">
@@ -556,6 +647,122 @@ export default function RecurringPage() {
           Default sources are always available. Custom sources can be edited or removed.
           Sources used by existing bills will appear automatically.
         </p>
+      </Modal>
+
+      {/* Add Card Modal */}
+      <Modal open={showAddCard} onClose={() => setShowAddCard(false)} title="Add Credit Card">
+        <Field label="Card Name">
+          <input className={inputStyle} style={inputColors} value={newCard.name} placeholder="e.g. Chase Sapphire"
+            onChange={(e) => setNewCard({ ...newCard, name: e.target.value })} />
+        </Field>
+        <Field label="Purpose">
+          <input className={inputStyle} style={inputColors} value={newCard.purpose} placeholder="e.g. Travel & dining"
+            onChange={(e) => setNewCard({ ...newCard, purpose: e.target.value })} />
+        </Field>
+        <Field label="Rewards / Bonus">
+          <input className={inputStyle} style={inputColors} value={newCard.bonus} placeholder="e.g. 3x on dining, 2x on travel"
+            onChange={(e) => setNewCard({ ...newCard, bonus: e.target.value })} />
+        </Field>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Credit Limit ($)">
+            <input className={inputStyle} style={inputColors} type="number" value={newCard.credit_limit} placeholder="0"
+              onChange={(e) => setNewCard({ ...newCard, credit_limit: e.target.value })} />
+          </Field>
+          <Field label="Color">
+            <div className="flex flex-wrap gap-1.5">
+              {COLOR_OPTIONS.map((c) => (
+                <button key={c} onClick={() => setNewCard({ ...newCard, color: c })}
+                  className="h-6 w-6 rounded-md border-2"
+                  style={{ background: c, borderColor: newCard.color === c ? '#E2E8F0' : 'transparent', cursor: 'pointer' }} />
+              ))}
+            </div>
+          </Field>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Target Payment">
+            <input className={inputStyle} style={inputColors} value={newCard.pay_range} placeholder="e.g. $25–$75"
+              onChange={(e) => setNewCard({ ...newCard, pay_range: e.target.value })} />
+          </Field>
+          <Field label="Due Date">
+            <input className={inputStyle} style={inputColors} value={newCard.pay_date} placeholder="e.g. The 23rd"
+              onChange={(e) => setNewCard({ ...newCard, pay_date: e.target.value })} />
+          </Field>
+        </div>
+        <div className="mt-2 flex justify-end gap-2">
+          <button onClick={() => setShowAddCard(false)}
+            className="rounded-lg border px-4 py-2 text-sm font-semibold"
+            style={{ borderColor: '#1E293B', color: '#64748B', background: 'transparent', cursor: 'pointer' }}>Cancel</button>
+          <button onClick={handleAddStrategyCard}
+            className="rounded-lg border-none px-5 py-2 text-sm font-semibold text-white"
+            style={{ background: 'linear-gradient(135deg, #3B82F6, #2563EB)', cursor: 'pointer', opacity: newCard.name.trim() ? 1 : 0.4 }}>
+            Add Card
+          </button>
+        </div>
+      </Modal>
+
+      {/* Edit Card Modal */}
+      <Modal open={!!editCard} onClose={() => { setEditCard(null); setConfirmCardDel(null); }} title="Edit Credit Card">
+        {editCard && (
+          <>
+            <Field label="Card Name">
+              <input className={inputStyle} style={inputColors} value={editCard.name}
+                onChange={(e) => setEditCard({ ...editCard, name: e.target.value })} />
+            </Field>
+            <Field label="Purpose">
+              <input className={inputStyle} style={inputColors} value={editCard.purpose || ''}
+                onChange={(e) => setEditCard({ ...editCard, purpose: e.target.value })} />
+            </Field>
+            <Field label="Rewards / Bonus">
+              <input className={inputStyle} style={inputColors} value={editCard.bonus || ''}
+                onChange={(e) => setEditCard({ ...editCard, bonus: e.target.value })} />
+            </Field>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Credit Limit ($)">
+                <input className={inputStyle} style={inputColors} type="number" value={editCard.credit_limit}
+                  onChange={(e) => setEditCard({ ...editCard, credit_limit: parseFloat(e.target.value) || 0 })} />
+              </Field>
+              <Field label="Color">
+                <div className="flex flex-wrap gap-1.5">
+                  {COLOR_OPTIONS.map((c) => (
+                    <button key={c} onClick={() => setEditCard({ ...editCard, color: c })}
+                      className="h-6 w-6 rounded-md border-2"
+                      style={{ background: c, borderColor: editCard.color === c ? '#E2E8F0' : 'transparent', cursor: 'pointer' }} />
+                  ))}
+                </div>
+              </Field>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Target Payment">
+                <input className={inputStyle} style={inputColors} value={editCard.pay_range || ''}
+                  onChange={(e) => setEditCard({ ...editCard, pay_range: e.target.value })} />
+              </Field>
+              <Field label="Due Date">
+                <input className={inputStyle} style={inputColors} value={editCard.pay_date || ''}
+                  onChange={(e) => setEditCard({ ...editCard, pay_date: e.target.value })} />
+              </Field>
+            </div>
+            <div className="mt-2 flex flex-wrap justify-between gap-2">
+              {confirmCardDel === editCard.id ? (
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs" style={{ color: '#F87171' }}>Sure?</span>
+                  <button onClick={() => handleDeleteStrategyCard(editCard.id)}
+                    className="rounded border px-3 py-1 text-xs font-semibold"
+                    style={{ borderColor: '#F8717133', color: '#F87171', background: 'transparent', cursor: 'pointer' }}>Yes, delete</button>
+                  <button onClick={() => setConfirmCardDel(null)}
+                    className="rounded border px-3 py-1 text-xs font-semibold"
+                    style={{ borderColor: '#1E293B', color: '#64748B', background: 'transparent', cursor: 'pointer' }}>Cancel</button>
+                </div>
+              ) : (
+                <button onClick={() => setConfirmCardDel(editCard.id)}
+                  className="rounded-lg border px-4 py-2 text-sm font-semibold"
+                  style={{ borderColor: '#F8717133', color: '#F87171', background: 'transparent', cursor: 'pointer' }}>Delete</button>
+              )}
+              <button onClick={handleSaveStrategyCard}
+                className="rounded-lg border-none px-5 py-2 text-sm font-semibold text-white"
+                style={{ background: 'linear-gradient(135deg, #3B82F6, #2563EB)', cursor: 'pointer' }}>Save Changes</button>
+            </div>
+          </>
+        )}
       </Modal>
     </div>
   );
