@@ -170,12 +170,12 @@ export default function TransactionsPage() {
       user_id: user.id,
       date: t.date,
       description: t.description,
-      original_description: t.description,
+      original_description: t.original_description,
       amount: t.amount,
+      category_id: t.category_id || null,
       import_batch: batch,
       note: 'imported',
     }));
-    // Supabase has a row limit per insert, batch in groups of 500
     for (let i = 0; i < rows.length; i += 500) {
       await supabase.from('transactions').insert(rows.slice(i, i + 500));
     }
@@ -560,7 +560,7 @@ export default function TransactionsPage() {
       </Modal>
 
       {/* CSV Import */}
-      <CsvImport open={showImport} onClose={() => setShowImport(false)} onImport={handleImport} />
+      <CsvImport open={showImport} onClose={() => setShowImport(false)} onImport={handleImport} categories={categories} />
 
       {/* Category Manager */}
       <CategoryManager
