@@ -39,6 +39,10 @@ export default function TransactionsPage() {
   const [showCatMgr, setShowCatMgr] = useState(false);
   const [confirmDel, setConfirmDel] = useState<string | null>(null);
 
+  // Recategorize
+  const [recategorizing, setRecategorizing] = useState(false);
+  const [recategorizeResult, setRecategorizeResult] = useState('');
+
   // New transaction form
   const [newTxn, setNewTxn] = useState({
     date: '', description: '', amount: '', category_id: '', note: '',
@@ -162,6 +166,28 @@ export default function TransactionsPage() {
   }
 
   // CSV Import
+  async function handleRecategorize() {
+    setRecategorizing(true);
+    setRecategorizeResult('');
+    try {
+      const res = await fetch('/api/ai/recategorize', { method: 'POST' });
+      const data = await res.json();
+      if (res.ok) {
+        setRecategorizeResult(
+          data.updated > 0
+            ? `Categorized ${data.updated} transactions${data.still_uncategorized > 0 ? ` (${data.still_uncategorized} still uncategorized — AI wasn't confident)` : ''}`
+            : data.message || 'No changes'
+        );
+        loadData();
+      } else {
+        setRecategorizeResult(data.error || 'Recategorize failed');
+      }
+    } catch {
+      setRecategorizeResult('Recategorize failed');
+    }
+    setRecategorizing(false);
+  }
+
   async function handleImport(imported: ImportedTransaction[]) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
@@ -289,6 +315,16 @@ export default function TransactionsPage() {
         >
           Categories
         </button>
+        {transactions.some((t) => !t.category_id) && (
+          <button
+            onClick={handleRecategorize}
+            disabled={recategorizing}
+            className="rounded-lg border-none px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
+            style={{ background: 'linear-gradient(135deg, #10B981, #059669)', cursor: 'pointer' }}
+          >
+            {recategorizing ? 'Categorizing...' : `AI Categorize (${transactions.filter((t) => !t.category_id).length})`}
+          </button>
+        )}
         <button
           onClick={() => setShowImport(true)}
           className="rounded-lg border-none px-4 py-2 text-xs font-semibold text-white"
@@ -308,6 +344,17 @@ export default function TransactionsPage() {
       <div className="mb-2 text-xs" style={{ color: '#475569' }}>
         {filtered.length} transactions{filtered.length !== transactions.length ? ` (filtered from ${transactions.length})` : ''}
       </div>
+
+      {recategorizeResult && (
+        <div className="mb-3 rounded-lg border px-4 py-3 text-xs"
+          style={{
+            background: recategorizeResult.includes('Categorized') ? '#0D3B2E' : '#3B2E0D',
+            borderColor: recategorizeResult.includes('Categorized') ? '#34D39933' : '#FBBF2433',
+            color: recategorizeResult.includes('Categorized') ? '#34D399' : '#FBBF24',
+          }}>
+          {recategorizeResult}
+        </div>
+      )}
 
       {/* Transaction Table */}
       <div className="overflow-hidden rounded-xl border" style={{ background: '#111827', borderColor: '#1E293B' }}>
