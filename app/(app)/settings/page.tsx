@@ -1,10 +1,31 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import Script from 'next/script';
 import { createClient } from '@/lib/supabase/client';
-import { usePlaidLink } from 'react-plaid-link';
 import CategoryManager from '@/components/shared/CategoryManager';
 import type { Category } from '@/types';
+
+// Teller Connect types (loaded via CDN script tag)
+type TellerEnrollment = {
+  accessToken: string;
+  enrollment: { id: string; institution: { name: string } };
+  user: { id: string };
+};
+
+type TellerConnect = {
+  setup: (options: {
+    applicationId: string;
+    environment?: 'sandbox' | 'development' | 'production';
+    onSuccess: (enrollment: TellerEnrollment) => void;
+    onExit?: () => void;
+    onFailure?: (failure: unknown) => void;
+  }) => { open: () => void };
+};
+
+declare global {
+  interface Window { TellerConnect?: TellerConnect }
+}
 
 type BankConnection = {
   id: string;
@@ -27,12 +48,12 @@ export default function SettingsPage() {
   // Stats
   const [stats, setStats] = useState({ txnCount: 0, billCount: 0, acctCount: 0 });
 
-  // Plaid
+  // Bank connections (Teller)
   const [connections, setConnections] = useState<BankConnection[]>([]);
-  const [linkToken, setLinkToken] = useState<string | null>(null);
   const [syncing, setSyncing] = useState<string | null>(null);
   const [syncResult, setSyncResult] = useState<{ id: string; message: string } | null>(null);
   const [confirmDisconnect, setConfirmDisconnect] = useState<string | null>(null);
+  const [tellerReady, setTellerReady] = useState(false);
 
   const loadData = useCallback(async () => {
     const [{ data: catData }, { data: txnData }, { data: { user } }, { count: billCount }, { count: acctCount }, { data: connData }] = await Promise.all([
@@ -53,45 +74,58 @@ export default function SettingsPage() {
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  // Plaid Link
-  const [plaidError, setPlaidError] = useState('');
-  const [connecting, setConnecting] = useState(false);
+  // Teller Connect
+  const [tellerError, setTellerError] = useState('');
 
-  async function handleConnectBank() {
-    setPlaidError('');
-    setConnecting(true);
-    try {
-      const res = await fetch('/api/plaid/create-link', { method: 'POST' });
-      const data = await res.json();
-      if (res.ok && data.link_token) {
-        setLinkToken(data.link_token);
-      } else {
-        setPlaidError(data.error || 'Failed to connect. Check Plaid credentials in environment variables.');
-      }
-    } catch (err) {
-      setPlaidError('Network error — could not reach the server.');
+  function handleConnectBank() {
+    setTellerError('');
+    const appId = process.env.NEXT_PUBLIC_TELLER_APP_ID;
+    if (!appId) {
+      setTellerError('Teller App ID not configured. Add NEXT_PUBLIC_TELLER_APP_ID to environment variables.');
+      return;
     }
-    setConnecting(false);
-  }
+    if (!window.TellerConnect) {
+      setTellerError('Teller Connect is still loading. Try again in a moment.');
+      return;
+    }
 
-  async function handlePlaidSuccess(publicToken: string, metadata: { institution?: { name?: string; institution_id?: string } | null }) {
-    await fetch('/api/plaid/exchange-token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        public_token: publicToken,
-        institution: metadata.institution,
-      }),
+    const tellerConnect = window.TellerConnect.setup({
+      applicationId: appId,
+      environment: (process.env.NEXT_PUBLIC_TELLER_ENV as 'sandbox' | 'development' | 'production') || 'sandbox',
+      onSuccess: async (enrollment) => {
+        try {
+          const res = await fetch('/api/teller/enrollment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              accessToken: enrollment.accessToken,
+              enrollmentId: enrollment.enrollment.id,
+              institutionName: enrollment.enrollment.institution.name,
+            }),
+          });
+          if (!res.ok) {
+            const data = await res.json();
+            setTellerError(data.error || 'Failed to save bank connection.');
+          } else {
+            loadData();
+          }
+        } catch {
+          setTellerError('Failed to save bank connection.');
+        }
+      },
+      onFailure: (failure) => {
+        console.error('Teller Connect failure:', failure);
+        setTellerError('Bank connection failed. Please try again.');
+      },
     });
-    setLinkToken(null);
-    loadData();
+    tellerConnect.open();
   }
 
   async function handleSync(connectionId: string) {
     setSyncing(connectionId);
     setSyncResult(null);
     try {
-      const res = await fetch('/api/plaid/sync', {
+      const res = await fetch('/api/teller/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ connection_id: connectionId }),
@@ -245,24 +279,24 @@ export default function SettingsPage() {
             </h3>
             <button
               onClick={handleConnectBank}
-              disabled={connecting}
+              disabled={!tellerReady}
               className="rounded-lg border-none px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
               style={{ background: 'linear-gradient(135deg, #3B82F6, #2563EB)', cursor: 'pointer' }}
             >
-              {connecting ? 'Connecting...' : '+ Connect Bank'}
+              {tellerReady ? '+ Connect Bank' : 'Loading...'}
             </button>
           </div>
 
-          {plaidError && (
+          {tellerError && (
             <div className="mb-3 rounded-lg border px-4 py-3 text-xs"
               style={{ background: '#3B0D1A', borderColor: '#F8717133', color: '#F87171' }}>
-              {plaidError}
+              {tellerError}
             </div>
           )}
 
           {connections.length === 0 ? (
             <p className="text-xs" style={{ color: '#475569' }}>
-              No banks connected. Click &ldquo;Connect Bank&rdquo; to link your accounts via Plaid.
+              No banks connected. Click &ldquo;Connect Bank&rdquo; to link your accounts via Teller, or use CSV import in the Transactions page.
             </p>
           ) : (
             <div className="space-y-3">
@@ -326,11 +360,6 @@ export default function SettingsPage() {
           </p>
         </div>
 
-        {/* Plaid Link (invisible until triggered) */}
-        {linkToken && (
-          <PlaidLinkButton linkToken={linkToken} onSuccess={handlePlaidSuccess} onExit={() => setLinkToken(null)} />
-        )}
-
         {/* About */}
         <div className="rounded-xl border p-5" style={{ background: '#111827', borderColor: '#1E293B' }}>
           <h3 className="mb-4 text-sm font-semibold" style={{ fontFamily: "'Space Mono', monospace", color: '#94A3B8' }}>
@@ -355,33 +384,13 @@ export default function SettingsPage() {
         onDelete={handleDeleteCategory}
         transactionCounts={txnCounts}
       />
+
+      {/* Teller Connect CDN script */}
+      <Script
+        src="https://cdn.teller.io/connect/connect.js"
+        onLoad={() => setTellerReady(true)}
+        strategy="afterInteractive"
+      />
     </div>
   );
-}
-
-// Separate component because usePlaidLink needs the token at render time
-function PlaidLinkButton({
-  linkToken,
-  onSuccess,
-  onExit,
-}: {
-  linkToken: string;
-  onSuccess: (publicToken: string, metadata: { institution?: { name?: string; institution_id?: string } | null }) => void;
-  onExit: () => void;
-}) {
-  const { open, ready } = usePlaidLink({
-    token: linkToken,
-    onSuccess: (public_token, metadata) => {
-      onSuccess(public_token, metadata);
-    },
-    onExit: () => {
-      onExit();
-    },
-  });
-
-  useEffect(() => {
-    if (ready) open();
-  }, [ready, open]);
-
-  return null;
 }
