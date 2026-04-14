@@ -58,10 +58,10 @@ export async function POST(request: Request) {
       .select('id, name, type')
       .eq('user_id', user.id);
 
-    // Teller sign convention: positive = money leaving account (expense), so flip
+    // Teller convention matches Solaris: positive = money in, negative = money out
     const forAi = newTxns.map(({ txn }) => ({
       description: txn.description,
-      amount: -parseFloat(txn.amount),
+      amount: parseFloat(txn.amount),
     }));
 
     // AI categorize
@@ -91,7 +91,7 @@ export async function POST(request: Request) {
         date: txn.date,
         description: ai?.cleaned_description || txn.description,
         original_description: txn.description,
-        amount: -parseFloat(txn.amount),
+        amount: parseFloat(txn.amount),
         category_id: categoryId,
         bank_account: accountName,
         external_transaction_id: txn.id,
