@@ -30,12 +30,10 @@ export default function Sidebar() {
     <>
       <div className="mb-8 px-4 pt-6">
         <h1
-          className="text-xl font-bold"
+          className="text-xl font-bold heading-gradient"
           style={{ fontFamily: "'Space Mono', monospace" }}
         >
-          <span className="bg-gradient-to-r from-emerald-400 to-blue-500 bg-clip-text text-transparent">
-            Solaris
-          </span>
+          Solaris
         </h1>
       </div>
 
@@ -52,9 +50,9 @@ export default function Sidebar() {
               onClick={() => setMobileOpen(false)}
               className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors"
               style={{
-                background: active ? '#1E3A5F' : 'transparent',
-                color: active ? '#93C5FD' : '#64748B',
-                borderLeft: active ? '2px solid #3B82F6' : '2px solid transparent',
+                background: active ? 'var(--amber-soft)' : 'transparent',
+                color: active ? 'var(--amber-hover)' : 'var(--text-muted)',
+                borderLeft: active ? '2px solid var(--amber)' : '2px solid transparent',
               }}
             >
               <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -66,11 +64,11 @@ export default function Sidebar() {
         })}
       </nav>
 
-      <div className="border-t px-3 py-4" style={{ borderColor: '#1E293B' }}>
+      <div className="border-t px-3 py-4" style={{ borderColor: 'var(--border)' }}>
         <button
           onClick={handleSignOut}
           className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors"
-          style={{ color: '#64748B', background: 'transparent', border: 'none', cursor: 'pointer' }}
+          style={{ color: 'var(--text-muted)', background: 'transparent', border: 'none', cursor: 'pointer' }}
         >
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -87,7 +85,7 @@ export default function Sidebar() {
       <button
         onClick={() => setMobileOpen(!mobileOpen)}
         className="fixed left-4 top-4 z-50 rounded-lg border p-2 md:hidden"
-        style={{ background: '#111827', borderColor: '#1E293B', color: '#E2E8F0' }}
+        style={{ background: 'var(--card)', borderColor: 'var(--border)', color: 'var(--text)' }}
       >
         <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           {mobileOpen
@@ -111,7 +109,7 @@ export default function Sidebar() {
         className={`fixed left-0 top-0 z-40 flex h-full w-60 flex-col border-r transition-transform md:translate-x-0 ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
-        style={{ background: '#0F1629', borderColor: '#1E293B' }}
+        style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border)' }}
       >
         {navContent}
       </aside>

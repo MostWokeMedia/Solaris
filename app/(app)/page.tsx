@@ -12,9 +12,20 @@ import type { Category, Transaction, RecurringBill, AllocationAccount, Allocatio
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
+// Semantic chart colors — resolved hex (Recharts doesn't support CSS vars)
+const GREEN = '#34D399';
+const RED = '#F87171';
+const AMBER = '#F59E0B';
+const AMBER_WARN = '#FBBF24';
+
 const tooltipStyle = {
-  background: '#1E293B', border: '1px solid #334155', borderRadius: 8, fontSize: 12, color: '#E2E8F0',
+  background: '#141416', border: '1px solid #33333A', borderRadius: 8, fontSize: 12, color: '#F5F5F4',
 };
+
+const panelClass = "rounded-xl border p-5";
+const panelStyle = { background: 'var(--card)', borderColor: 'var(--border)' };
+const sectionHeadingClass = "mb-4 text-sm font-semibold";
+const sectionHeadingStyle = { fontFamily: "'Space Mono', monospace", color: 'var(--text-secondary)' };
 
 export default function DashboardPage() {
   const supabase = createClient();
@@ -99,16 +110,13 @@ export default function DashboardPage() {
     const totalStarting = allocationPeriods.reduce((s, p) => s + Number(p.starting_amount), 0);
 
     return expenseCategories.map((cat) => {
-      // Allocated: find allocation account linked to this category
       const account = allocationAccounts.find((a) => a.category_id === cat.id);
       const allocated = account ? Math.round(totalStarting * (Number(account.percentage) / 100) * 100) / 100 : 0;
 
-      // Committed: sum of recurring bills in this category
       const committed = recurringBills
         .filter((b) => b.status === 'good' && b.category_id === cat.id)
         .reduce((s, b) => s + Number(b.amount), 0);
 
-      // Actual: sum of transactions in this category
       const actual = Math.abs(
         transactions
           .filter((t) => t.category_id === cat.id && Number(t.amount) < 0)
@@ -117,7 +125,7 @@ export default function DashboardPage() {
 
       return {
         category: cat.name,
-        color: cat.color || '#64748B',
+        color: cat.color || '#6B6B72',
         allocated,
         committed,
         actual,
@@ -133,56 +141,54 @@ export default function DashboardPage() {
     <div>
       {/* Header */}
       <div className="mb-6">
-        <h1 className="mb-1 text-2xl font-bold" style={{ fontFamily: "'Space Mono', monospace" }}>
-          <span className="bg-gradient-to-r from-emerald-400 to-blue-500 bg-clip-text text-transparent">
-            Dashboard
-          </span>
+        <h1 className="mb-1 text-2xl font-bold heading-gradient" style={{ fontFamily: "'Space Mono', monospace" }}>
+          Dashboard
         </h1>
-        <p className="text-sm" style={{ color: '#64748B' }}>Plan vs Commitments vs Reality</p>
+        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Plan vs Commitments vs Reality</p>
       </div>
 
       {/* Summary Cards */}
       <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-6">
-        <Card label="Revenue" value={formatMoney(totalRev)} accent="#34D399" />
-        <Card label="Expenses" value={formatMoney(Math.abs(totalExp))} accent="#F87171" />
-        <Card label="Net Income" value={formatMoney(netIncome)} accent={netIncome >= 0 ? '#34D399' : '#F87171'} sub={margin + '% margin'} />
-        <Card label="Committed" value={'$' + goodBillsTotal.toLocaleString()} accent="#FBBF24" sub={recurringBills.filter((b) => b.status === 'good').length + ' active bills'} />
-        <Card label="Vault" value={formatMoney(vaultTax.vault)} accent="#34D399" sub="Profit reserve" />
-        <Card label="Tax Reserve" value={formatMoney(vaultTax.tax)} accent="#F59E0B" sub="Set aside" />
+        <Card label="Revenue" value={formatMoney(totalRev)} accent={GREEN} />
+        <Card label="Expenses" value={formatMoney(Math.abs(totalExp))} accent={RED} />
+        <Card label="Net Income" value={formatMoney(netIncome)} accent={netIncome >= 0 ? GREEN : RED} sub={margin + '% margin'} />
+        <Card label="Committed" value={'$' + goodBillsTotal.toLocaleString()} accent={AMBER_WARN} sub={recurringBills.filter((b) => b.status === 'good').length + ' active bills'} />
+        <Card label="Vault" value={formatMoney(vaultTax.vault)} accent={GREEN} sub="Profit reserve" />
+        <Card label="Tax Reserve" value={formatMoney(vaultTax.tax)} accent={AMBER} sub="Set aside" />
       </div>
 
       {/* Charts Row */}
       {activeMonthlyData.length > 0 && (
         <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
           {/* Revenue vs Expenses */}
-          <div className="rounded-xl border p-5" style={{ background: '#111827', borderColor: '#1E293B' }}>
-            <h3 className="mb-4 text-sm font-semibold" style={{ fontFamily: "'Space Mono', monospace", color: '#94A3B8' }}>
+          <div className={panelClass} style={panelStyle}>
+            <h3 className={sectionHeadingClass} style={sectionHeadingStyle}>
               Monthly Revenue vs Expenses
             </h3>
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={activeMonthlyData} barGap={4}>
-                <XAxis dataKey="month" tick={{ fill: '#64748B', fontSize: 11 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: '#64748B', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => formatMoneyShort(v)} />
+                <XAxis dataKey="month" tick={{ fill: '#6B6B72', fontSize: 11 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: '#6B6B72', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => formatMoneyShort(v)} />
                 <Tooltip contentStyle={tooltipStyle} formatter={(v) => formatMoney(Number(v))} />
-                <Bar dataKey="revenue" fill="#34D399" radius={[4, 4, 0, 0]} name="Revenue" />
-                <Bar dataKey="expenses" fill="#F87171" radius={[4, 4, 0, 0]} name="Expenses" />
+                <Bar dataKey="revenue" fill={GREEN} radius={[4, 4, 0, 0]} name="Revenue" />
+                <Bar dataKey="expenses" fill={RED} radius={[4, 4, 0, 0]} name="Expenses" />
               </BarChart>
             </ResponsiveContainer>
           </div>
 
           {/* Profit/Loss */}
-          <div className="rounded-xl border p-5" style={{ background: '#111827', borderColor: '#1E293B' }}>
-            <h3 className="mb-4 text-sm font-semibold" style={{ fontFamily: "'Space Mono', monospace", color: '#94A3B8' }}>
+          <div className={panelClass} style={panelStyle}>
+            <h3 className={sectionHeadingClass} style={sectionHeadingStyle}>
               Monthly Profit / Loss
             </h3>
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={activeMonthlyData}>
-                <XAxis dataKey="month" tick={{ fill: '#64748B', fontSize: 11 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: '#64748B', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => formatMoneyShort(v)} />
+                <XAxis dataKey="month" tick={{ fill: '#6B6B72', fontSize: 11 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: '#6B6B72', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => formatMoneyShort(v)} />
                 <Tooltip contentStyle={tooltipStyle} formatter={(v) => formatMoney(Number(v))} />
                 <Bar dataKey="profit" radius={[4, 4, 0, 0]} name="Profit/Loss">
                   {activeMonthlyData.map((d, i) => (
-                    <Cell key={i} fill={d.profit >= 0 ? '#34D399' : '#F87171'} />
+                    <Cell key={i} fill={d.profit >= 0 ? GREEN : RED} />
                   ))}
                 </Bar>
               </BarChart>
@@ -190,8 +196,8 @@ export default function DashboardPage() {
             <div className="mt-2 flex flex-wrap justify-center gap-4">
               {activeMonthlyData.map((d) => (
                 <div key={d.month} className="text-center">
-                  <div className="text-[11px]" style={{ color: '#64748B' }}>{d.month}</div>
-                  <div className="text-xs font-bold" style={{ fontFamily: "'Space Mono', monospace", color: d.profit >= 0 ? '#34D399' : '#F87171' }}>
+                  <div className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{d.month}</div>
+                  <div className="text-xs font-bold" style={{ fontFamily: "'Space Mono', monospace", color: d.profit >= 0 ? GREEN : RED }}>
                     {formatMoney(d.profit)}
                   </div>
                 </div>
@@ -202,16 +208,16 @@ export default function DashboardPage() {
       )}
 
       {/* Budget vs Actual */}
-      <div className="rounded-xl border p-5" style={{ background: '#111827', borderColor: '#1E293B' }}>
-        <h3 className="mb-4 text-sm font-semibold" style={{ fontFamily: "'Space Mono', monospace", color: '#94A3B8' }}>
+      <div className={panelClass} style={panelStyle}>
+        <h3 className={sectionHeadingClass} style={sectionHeadingStyle}>
           Budget vs Actual
         </h3>
-        <p className="mb-4 text-xs" style={{ color: '#475569' }}>
+        <p className="mb-4 text-xs" style={{ color: 'var(--text-disabled)' }}>
           Allocated (Profit First) vs Committed (Recurring Bills) vs Actual (Transactions)
         </p>
 
         {budgetVsActual.length === 0 ? (
-          <div className="py-8 text-center text-sm" style={{ color: '#475569' }}>
+          <div className="py-8 text-center text-sm" style={{ color: 'var(--text-disabled)' }}>
             Link categories to allocation accounts and recurring bills to see the budget comparison.
           </div>
         ) : (
@@ -219,12 +225,12 @@ export default function DashboardPage() {
             <table className="w-full text-xs" style={{ borderCollapse: 'collapse' }}>
               <thead>
                 <tr>
-                  <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase" style={{ color: '#64748B', borderBottom: '1px solid #1E293B' }}>Category</th>
-                  <th className="px-3 py-2 text-right text-[10px] font-semibold uppercase" style={{ color: '#3B82F6', borderBottom: '1px solid #1E293B' }}>Allocated</th>
-                  <th className="px-3 py-2 text-right text-[10px] font-semibold uppercase" style={{ color: '#FBBF24', borderBottom: '1px solid #1E293B' }}>Committed</th>
-                  <th className="px-3 py-2 text-right text-[10px] font-semibold uppercase" style={{ color: '#F87171', borderBottom: '1px solid #1E293B' }}>Actual</th>
-                  <th className="px-3 py-2 text-right text-[10px] font-semibold uppercase" style={{ color: '#94A3B8', borderBottom: '1px solid #1E293B' }}>Variance</th>
-                  <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase" style={{ color: '#64748B', borderBottom: '1px solid #1E293B', minWidth: 120 }}>Status</th>
+                  <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase" style={{ color: 'var(--text-muted)', borderBottom: '1px solid var(--border)' }}>Category</th>
+                  <th className="px-3 py-2 text-right text-[10px] font-semibold uppercase" style={{ color: 'var(--amber)', borderBottom: '1px solid var(--border)' }}>Allocated</th>
+                  <th className="px-3 py-2 text-right text-[10px] font-semibold uppercase" style={{ color: 'var(--amber-warn)', borderBottom: '1px solid var(--border)' }}>Committed</th>
+                  <th className="px-3 py-2 text-right text-[10px] font-semibold uppercase" style={{ color: 'var(--red)', borderBottom: '1px solid var(--border)' }}>Actual</th>
+                  <th className="px-3 py-2 text-right text-[10px] font-semibold uppercase" style={{ color: 'var(--text-secondary)', borderBottom: '1px solid var(--border)' }}>Variance</th>
+                  <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase" style={{ color: 'var(--text-muted)', borderBottom: '1px solid var(--border)', minWidth: 120 }}>Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -234,38 +240,38 @@ export default function DashboardPage() {
                   const pct = row.allocated > 0 ? Math.min((row.actual / row.allocated) * 100, 100) : 0;
 
                   return (
-                    <tr key={row.category} className="transition-colors hover:bg-[#1A2332]">
-                      <td className="px-3 py-2.5" style={{ borderBottom: '1px solid #1E293B22' }}>
+                    <tr key={row.category} className="transition-colors hover:bg-[var(--card-hover)]">
+                      <td className="px-3 py-2.5" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
                         <div className="flex items-center gap-2">
                           <div className="h-2 w-2 rounded-sm" style={{ background: row.color }} />
-                          <span className="font-medium" style={{ color: '#CBD5E1' }}>{row.category}</span>
+                          <span className="font-medium" style={{ color: 'var(--text)' }}>{row.category}</span>
                         </div>
                       </td>
-                      <td className="px-3 py-2.5 text-right" style={{ fontFamily: "'Space Mono', monospace", color: '#3B82F6', borderBottom: '1px solid #1E293B22' }}>
+                      <td className="px-3 py-2.5 text-right" style={{ fontFamily: "'Space Mono', monospace", color: 'var(--amber)', borderBottom: '1px solid var(--border-subtle)' }}>
                         {row.allocated > 0 ? formatMoney(row.allocated) : '\u2014'}
                       </td>
-                      <td className="px-3 py-2.5 text-right" style={{ fontFamily: "'Space Mono', monospace", color: overCommitted ? '#F87171' : '#FBBF24', borderBottom: '1px solid #1E293B22' }}>
+                      <td className="px-3 py-2.5 text-right" style={{ fontFamily: "'Space Mono', monospace", color: overCommitted ? 'var(--red)' : 'var(--amber-warn)', borderBottom: '1px solid var(--border-subtle)' }}>
                         {row.committed > 0 ? formatMoney(row.committed) : '\u2014'}
                       </td>
-                      <td className="px-3 py-2.5 text-right" style={{ fontFamily: "'Space Mono', monospace", color: overBudget ? '#F87171' : '#E2E8F0', fontWeight: 700, borderBottom: '1px solid #1E293B22' }}>
+                      <td className="px-3 py-2.5 text-right" style={{ fontFamily: "'Space Mono', monospace", color: overBudget ? 'var(--red)' : 'var(--text)', fontWeight: 700, borderBottom: '1px solid var(--border-subtle)' }}>
                         {row.actual > 0 ? formatMoney(row.actual) : '\u2014'}
                       </td>
-                      <td className="px-3 py-2.5 text-right" style={{ fontFamily: "'Space Mono', monospace", color: row.variance >= 0 ? '#34D399' : '#F87171', fontWeight: 600, borderBottom: '1px solid #1E293B22' }}>
+                      <td className="px-3 py-2.5 text-right" style={{ fontFamily: "'Space Mono', monospace", color: row.variance >= 0 ? 'var(--green)' : 'var(--red)', fontWeight: 600, borderBottom: '1px solid var(--border-subtle)' }}>
                         {row.allocated > 0 ? formatMoney(row.variance) : '\u2014'}
                       </td>
-                      <td className="px-3 py-2.5" style={{ borderBottom: '1px solid #1E293B22' }}>
+                      <td className="px-3 py-2.5" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
                         {row.allocated > 0 && (
                           <div className="flex items-center gap-2">
-                            <div className="h-1.5 flex-1 overflow-hidden rounded-full" style={{ background: '#1E293B' }}>
+                            <div className="h-1.5 flex-1 overflow-hidden rounded-full" style={{ background: 'var(--border)' }}>
                               <div
                                 className="h-full rounded-full transition-all"
                                 style={{
                                   width: pct + '%',
-                                  background: overBudget ? '#F87171' : pct > 80 ? '#FBBF24' : '#34D399',
+                                  background: overBudget ? 'var(--red)' : pct > 80 ? 'var(--amber-warn)' : 'var(--green)',
                                 }}
                               />
                             </div>
-                            <span className="text-[10px] font-semibold" style={{ color: overBudget ? '#F87171' : '#64748B', minWidth: 32, textAlign: 'right' }}>
+                            <span className="text-[10px] font-semibold" style={{ color: overBudget ? 'var(--red)' : 'var(--text-muted)', minWidth: 32, textAlign: 'right' }}>
                               {Math.round(pct)}%
                             </span>
                           </div>
@@ -276,18 +282,18 @@ export default function DashboardPage() {
                 })}
 
                 {/* Totals Row */}
-                <tr style={{ background: '#0F1629' }}>
-                  <td className="px-3 py-2.5 font-bold" style={{ color: '#94A3B8' }}>Total</td>
-                  <td className="px-3 py-2.5 text-right font-bold" style={{ fontFamily: "'Space Mono', monospace", color: '#3B82F6' }}>
+                <tr style={{ background: 'var(--bg-elevated)' }}>
+                  <td className="px-3 py-2.5 font-bold" style={{ color: 'var(--text-secondary)' }}>Total</td>
+                  <td className="px-3 py-2.5 text-right font-bold" style={{ fontFamily: "'Space Mono', monospace", color: 'var(--amber)' }}>
                     {formatMoney(budgetVsActual.reduce((s, r) => s + r.allocated, 0))}
                   </td>
-                  <td className="px-3 py-2.5 text-right font-bold" style={{ fontFamily: "'Space Mono', monospace", color: '#FBBF24' }}>
+                  <td className="px-3 py-2.5 text-right font-bold" style={{ fontFamily: "'Space Mono', monospace", color: 'var(--amber-warn)' }}>
                     {formatMoney(budgetVsActual.reduce((s, r) => s + r.committed, 0))}
                   </td>
-                  <td className="px-3 py-2.5 text-right font-bold" style={{ fontFamily: "'Space Mono', monospace", color: '#F87171' }}>
+                  <td className="px-3 py-2.5 text-right font-bold" style={{ fontFamily: "'Space Mono', monospace", color: 'var(--red)' }}>
                     {formatMoney(budgetVsActual.reduce((s, r) => s + r.actual, 0))}
                   </td>
-                  <td className="px-3 py-2.5 text-right font-bold" style={{ fontFamily: "'Space Mono', monospace", color: budgetVsActual.reduce((s, r) => s + r.variance, 0) >= 0 ? '#34D399' : '#F87171' }}>
+                  <td className="px-3 py-2.5 text-right font-bold" style={{ fontFamily: "'Space Mono', monospace", color: budgetVsActual.reduce((s, r) => s + r.variance, 0) >= 0 ? 'var(--green)' : 'var(--red)' }}>
                     {formatMoney(budgetVsActual.reduce((s, r) => s + r.variance, 0))}
                   </td>
                   <td />
@@ -302,15 +308,15 @@ export default function DashboardPage() {
       {activeMonthlyData.length > 0 && (
         <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
           {/* Top Expense Categories */}
-          <div className="rounded-xl border p-5" style={{ background: '#111827', borderColor: '#1E293B' }}>
-            <h3 className="mb-3 text-sm font-semibold" style={{ fontFamily: "'Space Mono', monospace", color: '#94A3B8' }}>
+          <div className={panelClass} style={panelStyle}>
+            <h3 className="mb-3 text-sm font-semibold" style={sectionHeadingStyle}>
               Top Expenses
             </h3>
             {categories
               .filter((c) => c.type === 'expense')
               .map((cat) => ({
                 name: cat.name,
-                color: cat.color || '#F87171',
+                color: cat.color || RED,
                 total: Math.abs(transactions.filter((t) => t.category_id === cat.id && Number(t.amount) < 0).reduce((s, t) => s + Number(t.amount), 0)),
               }))
               .filter((c) => c.total > 0)
@@ -320,9 +326,9 @@ export default function DashboardPage() {
                 <div key={cat.name} className="mb-2 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className="h-2 w-2 rounded-sm" style={{ background: cat.color }} />
-                    <span className="text-xs" style={{ color: '#CBD5E1' }}>{cat.name}</span>
+                    <span className="text-xs" style={{ color: 'var(--text)' }}>{cat.name}</span>
                   </div>
-                  <span className="text-xs font-bold" style={{ fontFamily: "'Space Mono', monospace", color: '#F87171' }}>
+                  <span className="text-xs font-bold" style={{ fontFamily: "'Space Mono', monospace", color: 'var(--red)' }}>
                     {formatMoney(cat.total)}
                   </span>
                 </div>
@@ -330,15 +336,15 @@ export default function DashboardPage() {
           </div>
 
           {/* Revenue Sources */}
-          <div className="rounded-xl border p-5" style={{ background: '#111827', borderColor: '#1E293B' }}>
-            <h3 className="mb-3 text-sm font-semibold" style={{ fontFamily: "'Space Mono', monospace", color: '#94A3B8' }}>
+          <div className={panelClass} style={panelStyle}>
+            <h3 className="mb-3 text-sm font-semibold" style={sectionHeadingStyle}>
               Revenue Sources
             </h3>
             {categories
               .filter((c) => c.type === 'revenue')
               .map((cat) => ({
                 name: cat.name,
-                color: cat.color || '#34D399',
+                color: cat.color || GREEN,
                 total: transactions.filter((t) => t.category_id === cat.id && Number(t.amount) > 0).reduce((s, t) => s + Number(t.amount), 0),
                 pct: totalRev > 0 ? ((transactions.filter((t) => t.category_id === cat.id && Number(t.amount) > 0).reduce((s, t) => s + Number(t.amount), 0)) / totalRev * 100).toFixed(1) : '0',
               }))
@@ -348,21 +354,21 @@ export default function DashboardPage() {
                 <div key={cat.name} className="mb-2 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className="h-2 w-2 rounded-sm" style={{ background: cat.color }} />
-                    <span className="text-xs" style={{ color: '#CBD5E1' }}>{cat.name}</span>
+                    <span className="text-xs" style={{ color: 'var(--text)' }}>{cat.name}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold" style={{ fontFamily: "'Space Mono', monospace", color: '#34D399' }}>
+                    <span className="text-xs font-bold" style={{ fontFamily: "'Space Mono', monospace", color: 'var(--green)' }}>
                       {formatMoney(cat.total)}
                     </span>
-                    <span className="text-[10px]" style={{ color: '#64748B' }}>{cat.pct}%</span>
+                    <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{cat.pct}%</span>
                   </div>
                 </div>
               ))}
           </div>
 
           {/* Allocation Overview */}
-          <div className="rounded-xl border p-5" style={{ background: '#111827', borderColor: '#1E293B' }}>
-            <h3 className="mb-3 text-sm font-semibold" style={{ fontFamily: "'Space Mono', monospace", color: '#94A3B8' }}>
+          <div className={panelClass} style={panelStyle}>
+            <h3 className="mb-3 text-sm font-semibold" style={sectionHeadingStyle}>
               Allocation Overview
             </h3>
             {allocationAccounts.map((acct) => {
@@ -370,17 +376,17 @@ export default function DashboardPage() {
               return (
                 <div key={acct.id} className="mb-2 flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs" style={{ color: '#CBD5E1' }}>{acct.name}</span>
+                    <span className="text-xs" style={{ color: 'var(--text)' }}>{acct.name}</span>
                     {acct.tag && (
                       <span className="rounded px-1 py-0.5 text-[7px] font-bold"
-                        style={{ color: acct.tag === 'profit' ? '#34D399' : '#F59E0B', background: (acct.tag === 'profit' ? '#34D399' : '#F59E0B') + '22' }}>
+                        style={{ color: acct.tag === 'profit' ? 'var(--green)' : 'var(--amber)', background: (acct.tag === 'profit' ? GREEN : AMBER) + '22' }}>
                         {acct.tag.toUpperCase()}
                       </span>
                     )}
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px]" style={{ fontFamily: "'Space Mono', monospace", color: '#64748B' }}>{acct.percentage}%</span>
-                    <span className="text-xs font-bold" style={{ fontFamily: "'Space Mono', monospace", color: '#E2E8F0' }}>
+                    <span className="text-[10px]" style={{ fontFamily: "'Space Mono', monospace", color: 'var(--text-muted)' }}>{acct.percentage}%</span>
+                    <span className="text-xs font-bold" style={{ fontFamily: "'Space Mono', monospace", color: 'var(--text)' }}>
                       {allocated > 0 ? formatMoney(allocated) : '\u2014'}
                     </span>
                   </div>
@@ -388,7 +394,7 @@ export default function DashboardPage() {
               );
             })}
             {allocationAccounts.length === 0 && (
-              <div className="py-4 text-center text-xs" style={{ color: '#475569' }}>No allocation accounts set up yet.</div>
+              <div className="py-4 text-center text-xs" style={{ color: 'var(--text-disabled)' }}>No allocation accounts set up yet.</div>
             )}
           </div>
         </div>

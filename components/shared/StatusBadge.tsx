@@ -1,9 +1,9 @@
 'use client';
 
 const STATUS_CONFIG = {
-  good: { bg: '#0D3B2E', text: '#34D399', dot: '#34D399' },
-  paused: { bg: '#3B2E0D', text: '#FBBF24', dot: '#FBBF24' },
-  cancelled: { bg: '#3B0D1A', text: '#F87171', dot: '#F87171' },
+  good: { bg: '#0F2E22', text: 'var(--green)', dot: '#34D399' },
+  paused: { bg: '#2E220F', text: 'var(--amber-warn)', dot: '#FBBF24' },
+  cancelled: { bg: '#2E0F17', text: 'var(--red)', dot: '#F87171' },
 } as const;
 
 type StatusBadgeProps = {
@@ -22,7 +22,7 @@ export default function StatusBadge({ status, onClick }: StatusBadgeProps) {
       style={{
         background: config.bg,
         color: config.text,
-        borderColor: config.text + '33',
+        borderColor: config.dot + '33',
         cursor: onClick ? 'pointer' : 'default',
       }}
     >

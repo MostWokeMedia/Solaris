@@ -1,10 +1,52 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
 @import "tailwindcss";
 
+:root {
+  /* Surfaces */
+  --bg:            #0A0A0B;
+  --bg-elevated:   #111113;
+  --card:          #141416;
+  --card-hover:    #1A1A1D;
+  --border:        #26262B;
+  --border-subtle: #1E1E22;
+  --border-strong: #33333A;
+
+  /* Text */
+  --text:           #F5F5F4;
+  --text-secondary: #A1A1A6;
+  --text-muted:     #6B6B72;
+  --text-disabled:  #44444A;
+
+  /* Amber (primary brand) */
+  --amber:       #F59E0B;
+  --amber-hover: #FBBF24;
+  --amber-dark:  #D97706;
+  --amber-soft:  #F59E0B1A;
+  --amber-glow:  0 0 0 1px #F59E0B33, 0 4px 16px -4px #F59E0B40;
+
+  /* Semantic — kept for charts, money, variance */
+  --green:      #34D399;
+  --red:        #F87171;
+  --amber-warn: #FBBF24;
+
+  /* Tooltip */
+  --tooltip-bg:     #141416;
+  --tooltip-border: #33333A;
+}
+
 body {
   font-family: 'DM Sans', sans-serif;
-  background: #0A0E17;
-  color: #E2E8F0;
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* Heading gradient utility — amber to gold */
+.heading-gradient {
+  background: linear-gradient(90deg, #F59E0B, #FBBF24);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
 }
 
 /* Scrollbar styling */
@@ -14,16 +56,16 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #0A0E17;
+  background: var(--bg);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1E293B;
+  background: var(--border);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+  background: var(--border-strong);
 }
 
 /* Number inputs - hide spinners */

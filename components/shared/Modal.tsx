@@ -32,8 +32,8 @@ export default function Modal({ open, onClose, title, wide, children }: ModalPro
         onClick={(e) => e.stopPropagation()}
         className="w-full overflow-auto rounded-2xl border"
         style={{
-          background: '#111827',
-          borderColor: '#1E293B',
+          background: 'var(--card)',
+          borderColor: 'var(--border)',
           maxWidth: wide ? 640 : 440,
           maxHeight: '90vh',
           boxShadow: '0 24px 48px rgba(0,0,0,0.5)',
@@ -41,18 +41,18 @@ export default function Modal({ open, onClose, title, wide, children }: ModalPro
       >
         <div
           className="flex items-center justify-between border-b px-6 py-5"
-          style={{ borderColor: '#1E293B' }}
+          style={{ borderColor: 'var(--border)' }}
         >
           <h3
             className="text-base font-bold"
-            style={{ fontFamily: "'Space Mono', monospace", color: '#E2E8F0' }}
+            style={{ fontFamily: "'Space Mono', monospace", color: 'var(--text)' }}
           >
             {title}
           </h3>
           <button
             onClick={onClose}
-            className="rounded-md px-2 py-1 text-xl transition-colors hover:text-slate-300"
-            style={{ background: 'none', border: 'none', color: '#64748B', cursor: 'pointer' }}
+            className="rounded-md px-2 py-1 text-xl transition-colors"
+            style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
           >
             &#x2715;
           </button>
