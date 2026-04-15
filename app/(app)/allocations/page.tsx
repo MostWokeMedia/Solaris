@@ -17,8 +17,8 @@ for (let m = 0; m < 12; m++) {
 const TAG_COLORS: Record<string, string> = { profit: '#34D399', tax: '#F59E0B' };
 const TAG_LABELS: Record<string, string> = { profit: 'PROFIT', tax: 'TAX' };
 
-const inputStyle = "w-full rounded-lg border px-3 py-2 text-sm outline-none transition-colors focus:border-blue-500";
-const inputColors = { background: '#0A0E17', borderColor: '#1E293B', color: '#E2E8F0' };
+const inputStyle = "w-full rounded-lg border px-3 py-2 text-sm outline-none transition-colors";
+const inputColors = { background: 'var(--bg)', borderColor: 'var(--border)', color: 'var(--text)' };
 
 export default function AllocationsPage() {
   const supabase = createClient();
@@ -216,7 +216,7 @@ export default function AllocationsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="text-sm" style={{ color: '#64748B' }}>Loading allocations...</div>
+        <div className="text-sm" style={{ color: 'var(--text-muted)' }}>Loading allocations...</div>
       </div>
     );
   }
@@ -227,23 +227,21 @@ export default function AllocationsPage() {
       <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="mb-1 text-2xl font-bold" style={{ fontFamily: "'Space Mono', monospace" }}>
-            <span className="bg-gradient-to-r from-amber-400 to-red-500 bg-clip-text text-transparent">
-              Profit First
-            </span>
+            <span className="heading-gradient">Profit First</span>
           </h1>
-          <p className="text-sm" style={{ color: '#64748B' }}>
+          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
             Personal Allocation System &middot; {year}
           </p>
         </div>
         <div className="flex gap-2">
           <button onClick={() => setShowAcctMgr(true)}
             className="rounded-lg border-none px-4 py-2 text-xs font-semibold text-white"
-            style={{ background: 'linear-gradient(135deg, #3B82F6, #2563EB)', cursor: 'pointer' }}>
+            style={{ background: 'var(--amber)', color: '#0A0A0B', cursor: 'pointer' }}>
             Manage Accounts
           </button>
           <button onClick={() => setShowCardMgr(true)}
             className="rounded-lg border-none px-4 py-2 text-xs font-semibold text-white"
-            style={{ background: 'linear-gradient(135deg, #8B5CF6, #6D28D9)', cursor: 'pointer' }}>
+            style={{ background: 'var(--amber-soft)', border: '1px solid var(--amber)', color: 'var(--amber)', cursor: 'pointer' }}>
             Credit Cards
           </button>
         </div>
@@ -252,26 +250,26 @@ export default function AllocationsPage() {
       {/* Summary */}
       <div className="mb-6 flex flex-wrap gap-3">
         {[
-          { label: 'Allocated', value: totalPct.toFixed(1) + '%', color: totalPct > 100 ? '#F87171' : '#34D399' },
-          { label: 'Unallocated', value: unallocated.toFixed(1) + '%', color: unallocated < 0 ? '#F87171' : '#818CF8' },
-          { label: 'Accounts', value: accounts.length.toString(), color: '#E2E8F0' },
-          { label: 'Vault Balance', value: formatMoney(computed[PERIODS[PERIODS.length - 1]?.key]?.vaultBalance || 0), color: '#34D399' },
+          { label: 'Allocated', value: totalPct.toFixed(1) + '%', color: totalPct > 100 ? 'var(--red)' : 'var(--green)' },
+          { label: 'Unallocated', value: unallocated.toFixed(1) + '%', color: unallocated < 0 ? 'var(--red)' : 'var(--text-secondary)' },
+          { label: 'Accounts', value: accounts.length.toString(), color: 'var(--text)' },
+          { label: 'Vault Balance', value: formatMoney(computed[PERIODS[PERIODS.length - 1]?.key]?.vaultBalance || 0), color: 'var(--green)' },
         ].map((c, i) => (
-          <div key={i} className="min-w-[140px] flex-1 rounded-xl border p-3" style={{ background: '#111827', borderColor: '#1E293B' }}>
-            <div className="text-[10px] font-semibold uppercase" style={{ color: '#64748B' }}>{c.label}</div>
+          <div key={i} className="min-w-[140px] flex-1 rounded-xl border p-3" style={{ background: 'var(--card)', borderColor: 'var(--border)' }}>
+            <div className="text-[10px] font-semibold uppercase" style={{ color: 'var(--text-muted)' }}>{c.label}</div>
             <div className="mt-0.5 text-xl font-bold" style={{ fontFamily: "'Space Mono', monospace", color: c.color }}>{c.value}</div>
           </div>
         ))}
       </div>
 
       {/* Main Grid */}
-      <div className="overflow-hidden rounded-xl border" style={{ background: '#111827', borderColor: '#1E293B' }}>
+      <div className="overflow-hidden rounded-xl border" style={{ background: 'var(--card)', borderColor: 'var(--border)' }}>
         <div className="overflow-x-auto">
           <div style={{ minWidth: 200 + PERIODS.length * 100 + 110 }}>
 
             {/* Header Row */}
             <div style={{ display: 'grid', gridTemplateColumns: gridCols, borderBottom: '2px solid #1E293B' }}>
-              <div className="sticky left-0 z-[2] px-3 py-3 text-[11px] font-bold" style={{ background: '#0F1629', color: '#94A3B8' }}>
+              <div className="sticky left-0 z-[2] px-3 py-3 text-[11px] font-bold" style={{ background: 'var(--bg-elevated)', color: 'var(--text-secondary)' }}>
                 <div>Reference %</div>
                 <div className="mt-0.5">Account Name</div>
               </div>
@@ -280,13 +278,13 @@ export default function AllocationsPage() {
                   style={{
                     background: p.qEnd ? '#1A1A2E' : '#0F1629',
                     color: p.qEnd ? '#F59E0B' : '#64748B',
-                    borderLeft: p.half === 0 ? '2px solid #1E293B' : '1px solid #1E293B22',
+                    borderLeft: p.half === 0 ? '2px solid var(--border)' : '1px solid var(--border-subtle)',
                   }}>
                   {p.label}
-                  {p.qEnd && <div className="mt-0.5 text-[8px]" style={{ color: '#F59E0B' }}>Q END</div>}
+                  {p.qEnd && <div className="mt-0.5 text-[8px]" style={{ color: 'var(--amber)' }}>Q END</div>}
                 </div>
               ))}
-              <div className="px-1.5 py-2 text-center text-[11px] font-bold" style={{ background: '#0F1629', color: '#94A3B8', borderLeft: '2px solid #3B82F6' }}>
+              <div className="px-1.5 py-2 text-center text-[11px] font-bold" style={{ background: 'var(--bg-elevated)', color: 'var(--text-secondary)', borderLeft: '2px solid var(--amber)' }}>
                 Totals:
               </div>
             </div>
@@ -296,8 +294,8 @@ export default function AllocationsPage() {
               const isEditingPct = inlineEdit?.id === acct.id && inlineEdit.field === 'pct';
               const isEditingName = inlineEdit?.id === acct.id && inlineEdit.field === 'name';
               return (
-                <div key={acct.id} style={{ display: 'grid', gridTemplateColumns: gridCols, borderBottom: '1px solid #1E293B22' }}>
-                  <div className="sticky left-0 z-[1] flex items-center gap-1.5 px-2 py-1" style={{ background: '#111827', borderRight: '1px solid #1E293B' }}>
+                <div key={acct.id} style={{ display: 'grid', gridTemplateColumns: gridCols, borderBottom: '1px solid var(--border-subtle)' }}>
+                  <div className="sticky left-0 z-[1] flex items-center gap-1.5 px-2 py-1" style={{ background: 'var(--card)', borderRight: '1px solid var(--border)' }}>
                     {isEditingPct ? (
                       <input autoFocus type="number" step="0.1"
                         className="w-[50px] rounded border px-1.5 py-1 text-right text-[11px] outline-none"
@@ -309,7 +307,7 @@ export default function AllocationsPage() {
                     ) : (
                       <span onClick={() => setInlineEdit({ id: acct.id, field: 'pct' })}
                         className="min-w-[38px] cursor-pointer border-b border-dashed py-0.5 text-right text-[11px]"
-                        style={{ fontFamily: "'Space Mono', monospace", color: '#64748B', borderColor: '#334155' }}
+                        style={{ fontFamily: "'Space Mono', monospace", color: 'var(--text-muted)', borderColor: '#334155' }}
                         title="Click to edit %">
                         {Number(acct.percentage) > 0 ? acct.percentage + '%' : '0%'}
                       </span>
@@ -325,7 +323,7 @@ export default function AllocationsPage() {
                     ) : (
                       <span onClick={() => setInlineEdit({ id: acct.id, field: 'name' })}
                         className="flex-1 cursor-pointer border-b border-dashed py-0.5 text-xs font-medium"
-                        style={{ color: '#CBD5E1', borderColor: '#334155' }}
+                        style={{ color: 'var(--text)', borderColor: '#334155' }}
                         title="Click to edit name">
                         {acct.name}
                       </span>
@@ -344,7 +342,7 @@ export default function AllocationsPage() {
                         style={{
                           fontFamily: "'Space Mono', monospace",
                           color: val > 0 ? '#E2E8F0' : '#334155',
-                          borderLeft: p.half === 0 ? '2px solid #1E293B' : '1px solid #1E293B11',
+                          borderLeft: p.half === 0 ? '2px solid var(--border)' : '1px solid var(--border-subtle)',
                         }}>
                         {val > 0 ? formatMoney(val) : '\u2014'}
                       </div>
@@ -354,7 +352,7 @@ export default function AllocationsPage() {
                     style={{
                       fontFamily: "'Space Mono', monospace",
                       color: (totals.acctSums[acct.id] || 0) > 0 ? '#E2E8F0' : '#334155',
-                      borderLeft: '2px solid #3B82F6', background: '#0F1629',
+                      borderLeft: '2px solid var(--amber)', background: 'var(--bg-elevated)',
                     }}>
                     {(totals.acctSums[acct.id] || 0) > 0 ? formatMoney(totals.acctSums[acct.id]) : '\u2014'}
                   </div>
@@ -363,22 +361,22 @@ export default function AllocationsPage() {
             })}
 
             {/* Accounts Total */}
-            <div style={{ display: 'grid', gridTemplateColumns: gridCols, borderTop: '2px solid #1E293B', borderBottom: '1px solid #1E293B', background: '#0F1629' }}>
-              <div className="sticky left-0 z-[1] px-3 py-2 text-xs font-bold" style={{ background: '#0F1629', color: '#94A3B8', borderRight: '1px solid #1E293B' }}>
-                <span className="mr-2 text-[11px]" style={{ fontFamily: "'Space Mono', monospace", color: '#64748B' }}>{totalPct.toFixed(1)}%</span>
+            <div style={{ display: 'grid', gridTemplateColumns: gridCols, borderTop: '2px solid #1E293B', borderBottom: '1px solid #1E293B', background: 'var(--bg-elevated)' }}>
+              <div className="sticky left-0 z-[1] px-3 py-2 text-xs font-bold" style={{ background: 'var(--bg-elevated)', color: 'var(--text-secondary)', borderRight: '1px solid var(--border)' }}>
+                <span className="mr-2 text-[11px]" style={{ fontFamily: "'Space Mono', monospace", color: 'var(--text-muted)' }}>{totalPct.toFixed(1)}%</span>
                 Accounts Total
               </div>
               {PERIODS.map((p) => {
                 const v = computed[p.key]?.acctTotal || 0;
                 return (
                   <div key={p.key} className="px-1.5 py-2 text-right text-[11px] font-bold"
-                    style={{ fontFamily: "'Space Mono', monospace", color: v > 0 ? '#F87171' : '#334155', borderLeft: p.half === 0 ? '2px solid #1E293B' : '1px solid #1E293B11' }}>
+                    style={{ fontFamily: "'Space Mono', monospace", color: v > 0 ? '#F87171' : '#334155', borderLeft: p.half === 0 ? '2px solid var(--border)' : '1px solid var(--border-subtle)' }}>
                     {v > 0 ? formatMoney(v) : '\u2014'}
                   </div>
                 );
               })}
               <div className="px-1.5 py-2 text-right text-[11px] font-bold"
-                style={{ fontFamily: "'Space Mono', monospace", color: totals.acctTotal > 0 ? '#F87171' : '#334155', borderLeft: '2px solid #3B82F6' }}>
+                style={{ fontFamily: "'Space Mono', monospace", color: totals.acctTotal > 0 ? '#F87171' : '#334155', borderLeft: '2px solid var(--amber)' }}>
                 {totals.acctTotal > 0 ? formatMoney(totals.acctTotal) : '\u2014'}
               </div>
             </div>
@@ -387,12 +385,12 @@ export default function AllocationsPage() {
             <div className="h-2" style={{ background: '#0A0E17' }} />
 
             {/* Starting Amount */}
-            <div style={{ display: 'grid', gridTemplateColumns: gridCols, borderBottom: '1px solid #1E293B', background: '#0D1B2A' }}>
-              <div className="sticky left-0 z-[1] px-3 py-2 text-xs font-bold" style={{ color: '#3B82F6', background: '#0D1B2A', borderRight: '1px solid #1E293B' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: gridCols, borderBottom: '1px solid #1E293B', background: '#1F1405' }}>
+              <div className="sticky left-0 z-[1] px-3 py-2 text-xs font-bold" style={{ color: 'var(--amber)', background: '#1F1405', borderRight: '1px solid var(--border)' }}>
                 Starting Amount
               </div>
               {PERIODS.map((p) => (
-                <div key={p.key} className="px-1 py-1" style={{ borderLeft: p.half === 0 ? '2px solid #1E293B' : '1px solid #1E293B11' }}>
+                <div key={p.key} className="px-1 py-1" style={{ borderLeft: p.half === 0 ? '2px solid var(--border)' : '1px solid var(--border-subtle)' }}>
                   <input type="number"
                     className="w-full rounded border px-1.5 py-1 text-right text-[11px] outline-none"
                     style={{ ...inputColors, fontFamily: "'Space Mono', monospace" }}
@@ -409,14 +407,14 @@ export default function AllocationsPage() {
                 </div>
               ))}
               <div className="px-1.5 py-2 text-right text-[11px] font-bold"
-                style={{ fontFamily: "'Space Mono', monospace", color: totals.startAmt > 0 ? '#3B82F6' : '#334155', borderLeft: '2px solid #3B82F6', background: '#0D1B2A' }}>
+                style={{ fontFamily: "'Space Mono', monospace", color: totals.startAmt > 0 ? '#3B82F6' : '#334155', borderLeft: '2px solid var(--amber)', background: '#1F1405' }}>
                 {totals.startAmt > 0 ? formatMoney(totals.startAmt) : '\u2014'}
               </div>
             </div>
 
             {/* After Allocations */}
             <div style={{ display: 'grid', gridTemplateColumns: gridCols, borderBottom: '1px solid #1E293B' }}>
-              <div className="sticky left-0 z-[1] px-3 py-2 text-xs font-semibold" style={{ color: '#94A3B8', background: '#111827', borderRight: '1px solid #1E293B' }}>
+              <div className="sticky left-0 z-[1] px-3 py-2 text-xs font-semibold" style={{ color: 'var(--text-secondary)', background: 'var(--card)', borderRight: '1px solid var(--border)' }}>
                 After Allocations
               </div>
               {PERIODS.map((p) => {
@@ -427,14 +425,14 @@ export default function AllocationsPage() {
                     style={{
                       fontFamily: "'Space Mono', monospace",
                       color: c?.startAmt > 0 ? (v >= 0 ? '#34D399' : '#F87171') : '#334155',
-                      borderLeft: p.half === 0 ? '2px solid #1E293B' : '1px solid #1E293B11',
+                      borderLeft: p.half === 0 ? '2px solid var(--border)' : '1px solid var(--border-subtle)',
                     }}>
                     {c?.startAmt > 0 ? formatMoney(v) : '\u2014'}
                   </div>
                 );
               })}
               <div className="px-1.5 py-2 text-right text-[11px] font-bold"
-                style={{ fontFamily: "'Space Mono', monospace", color: totals.afterAlloc >= 0 ? '#34D399' : '#F87171', borderLeft: '2px solid #3B82F6', background: '#0F1629' }}>
+                style={{ fontFamily: "'Space Mono', monospace", color: totals.afterAlloc >= 0 ? '#34D399' : '#F87171', borderLeft: '2px solid var(--amber)', background: 'var(--bg-elevated)' }}>
                 {totals.startAmt > 0 ? formatMoney(totals.afterAlloc) : '\u2014'}
               </div>
             </div>
@@ -443,31 +441,31 @@ export default function AllocationsPage() {
 
             {/* Vault Balance */}
             <div style={{ display: 'grid', gridTemplateColumns: gridCols, borderBottom: '1px solid #1E293B', background: '#0D2818' }}>
-              <div className="sticky left-0 z-[1] px-3 py-2 text-xs font-bold" style={{ color: '#34D399', background: '#0D2818', borderRight: '1px solid #1E293B' }}>
+              <div className="sticky left-0 z-[1] px-3 py-2 text-xs font-bold" style={{ color: 'var(--green)', background: '#0D2818', borderRight: '1px solid var(--border)' }}>
                 Vault Balance
               </div>
               {PERIODS.map((p) => {
                 const v = computed[p.key]?.vaultBalance || 0;
                 return (
                   <div key={p.key} className="px-1.5 py-2 text-right text-[11px] font-bold"
-                    style={{ fontFamily: "'Space Mono', monospace", color: '#34D399', borderLeft: p.half === 0 ? '2px solid #1E293B' : '1px solid #1E293B11' }}>
+                    style={{ fontFamily: "'Space Mono', monospace", color: 'var(--green)', borderLeft: p.half === 0 ? '2px solid var(--border)' : '1px solid var(--border-subtle)' }}>
                     {v > 0 ? formatMoney(v) : '\u2014'}
                   </div>
                 );
               })}
               <div className="px-1.5 py-2 text-right text-[11px] font-bold"
-                style={{ fontFamily: "'Space Mono', monospace", color: '#34D399', borderLeft: '2px solid #3B82F6', background: '#0D2818' }}>
+                style={{ fontFamily: "'Space Mono', monospace", color: 'var(--green)', borderLeft: '2px solid var(--amber)', background: '#0D2818' }}>
                 {totals.vaultFinal > 0 ? formatMoney(totals.vaultFinal) : '\u2014'}
               </div>
             </div>
 
             {/* Vault Draw */}
             <div style={{ display: 'grid', gridTemplateColumns: gridCols, borderBottom: '1px solid #1E293B' }}>
-              <div className="sticky left-0 z-[1] px-3 py-2 text-xs font-semibold" style={{ color: '#94A3B8', background: '#111827', borderRight: '1px solid #1E293B' }}>
+              <div className="sticky left-0 z-[1] px-3 py-2 text-xs font-semibold" style={{ color: 'var(--text-secondary)', background: 'var(--card)', borderRight: '1px solid var(--border)' }}>
                 Vault Draw
               </div>
               {PERIODS.map((p) => (
-                <div key={p.key} className="px-1 py-1" style={{ borderLeft: p.half === 0 ? '2px solid #1E293B' : '1px solid #1E293B11' }}>
+                <div key={p.key} className="px-1 py-1" style={{ borderLeft: p.half === 0 ? '2px solid var(--border)' : '1px solid var(--border-subtle)' }}>
                   <input type="number"
                     className="w-full rounded border px-1.5 py-1 text-right text-[11px] outline-none"
                     style={{ ...inputColors, fontFamily: "'Space Mono', monospace" }}
@@ -484,14 +482,14 @@ export default function AllocationsPage() {
                 </div>
               ))}
               <div className="px-1.5 py-2 text-right text-[11px] font-semibold"
-                style={{ fontFamily: "'Space Mono', monospace", color: totals.draws > 0 ? '#F87171' : '#334155', borderLeft: '2px solid #3B82F6', background: '#0F1629' }}>
+                style={{ fontFamily: "'Space Mono', monospace", color: totals.draws > 0 ? '#F87171' : '#334155', borderLeft: '2px solid var(--amber)', background: 'var(--bg-elevated)' }}>
                 {totals.draws > 0 ? formatMoney(totals.draws) : '\u2014'}
               </div>
             </div>
 
             {/* Profit Distribution */}
             <div style={{ display: 'grid', gridTemplateColumns: gridCols, borderBottom: '1px solid #1E293B', background: '#1A1A2E' }}>
-              <div className="sticky left-0 z-[1] px-3 py-2 text-xs font-bold" style={{ color: '#F59E0B', background: '#1A1A2E', borderRight: '1px solid #1E293B' }}>
+              <div className="sticky left-0 z-[1] px-3 py-2 text-xs font-bold" style={{ color: 'var(--amber)', background: '#1A1A2E', borderRight: '1px solid var(--border)' }}>
                 Profit Distribution
               </div>
               {PERIODS.map((p) => {
@@ -501,34 +499,34 @@ export default function AllocationsPage() {
                     style={{
                       fontFamily: "'Space Mono', monospace",
                       color: p.qEnd && v > 0 ? '#F59E0B' : '#334155',
-                      borderLeft: p.half === 0 ? '2px solid #1E293B' : '1px solid #1E293B11',
+                      borderLeft: p.half === 0 ? '2px solid var(--border)' : '1px solid var(--border-subtle)',
                     }}>
                     {p.qEnd && v > 0 ? formatMoney(v) : '\u2014'}
                   </div>
                 );
               })}
               <div className="px-1.5 py-2 text-right text-[11px] font-bold"
-                style={{ fontFamily: "'Space Mono', monospace", color: '#F59E0B', borderLeft: '2px solid #3B82F6', background: '#1A1A2E' }}>
+                style={{ fontFamily: "'Space Mono', monospace", color: 'var(--amber)', borderLeft: '2px solid var(--amber)', background: '#1A1A2E' }}>
                 {'\u2014'}
               </div>
             </div>
 
             {/* Tax Balance */}
             <div style={{ display: 'grid', gridTemplateColumns: gridCols, borderBottom: '1px solid #1E293B', background: '#1A1500' }}>
-              <div className="sticky left-0 z-[1] px-3 py-2 text-xs font-bold" style={{ color: '#F59E0B', background: '#1A1500', borderRight: '1px solid #1E293B' }}>
+              <div className="sticky left-0 z-[1] px-3 py-2 text-xs font-bold" style={{ color: 'var(--amber)', background: '#1A1500', borderRight: '1px solid var(--border)' }}>
                 Tax Acct. Balance
               </div>
               {PERIODS.map((p) => {
                 const v = computed[p.key]?.taxBalance || 0;
                 return (
                   <div key={p.key} className="px-1.5 py-2 text-right text-[11px] font-semibold"
-                    style={{ fontFamily: "'Space Mono', monospace", color: '#F59E0B', borderLeft: p.half === 0 ? '2px solid #1E293B' : '1px solid #1E293B11' }}>
+                    style={{ fontFamily: "'Space Mono', monospace", color: 'var(--amber)', borderLeft: p.half === 0 ? '2px solid var(--border)' : '1px solid var(--border-subtle)' }}>
                     {v > 0 ? formatMoney(v) : '\u2014'}
                   </div>
                 );
               })}
               <div className="px-1.5 py-2 text-right text-[11px] font-bold"
-                style={{ fontFamily: "'Space Mono', monospace", color: '#F59E0B', borderLeft: '2px solid #3B82F6', background: '#1A1500' }}>
+                style={{ fontFamily: "'Space Mono', monospace", color: 'var(--amber)', borderLeft: '2px solid var(--amber)', background: '#1A1500' }}>
                 {totals.taxFinal > 0 ? formatMoney(totals.taxFinal) : '\u2014'}
               </div>
             </div>
@@ -539,9 +537,9 @@ export default function AllocationsPage() {
             {cards.map((card) => {
               const checkCount = PERIODS.filter((p) => cardChecks[card.id + '-' + p.key]).length;
               return (
-                <div key={card.id} style={{ display: 'grid', gridTemplateColumns: gridCols, borderBottom: '1px solid #1E293B22' }}>
+                <div key={card.id} style={{ display: 'grid', gridTemplateColumns: gridCols, borderBottom: '1px solid var(--border-subtle)' }}>
                   <div className="sticky left-0 z-[1] flex items-center gap-1.5 px-3 py-1.5 text-[11px]"
-                    style={{ color: '#94A3B8', background: '#111827', borderRight: '1px solid #1E293B' }}>
+                    style={{ color: 'var(--text-secondary)', background: 'var(--card)', borderRight: '1px solid var(--border)' }}>
                     {card.name} Paid
                   </div>
                   {PERIODS.map((p) => {
@@ -552,14 +550,14 @@ export default function AllocationsPage() {
                         className="cursor-pointer px-1.5 py-1.5 text-center text-[13px]"
                         style={{
                           color: checked ? '#34D399' : '#334155',
-                          borderLeft: p.half === 0 ? '2px solid #1E293B' : '1px solid #1E293B11',
+                          borderLeft: p.half === 0 ? '2px solid var(--border)' : '1px solid var(--border-subtle)',
                         }}>
                         {checked ? '\u2713' : '\u25CB'}
                       </div>
                     );
                   })}
                   <div className="px-1.5 py-1.5 text-center text-[10px]"
-                    style={{ fontFamily: "'Space Mono', monospace", color: '#64748B', borderLeft: '2px solid #3B82F6', background: '#0F1629' }}>
+                    style={{ fontFamily: "'Space Mono', monospace", color: 'var(--text-muted)', borderLeft: '2px solid var(--amber)', background: 'var(--bg-elevated)' }}>
                     {checkCount}/{PERIODS.length}
                   </div>
                 </div>
@@ -568,7 +566,7 @@ export default function AllocationsPage() {
           </div>
         </div>
       </div>
-      <p className="mt-2 text-center text-[10px]" style={{ color: '#334155' }}>
+      <p className="mt-2 text-center text-[10px]" style={{ color: 'var(--text-disabled)' }}>
         Scroll horizontally for all 26 pay periods &middot; Q END columns mark quarterly distribution points
       </p>
 
@@ -587,12 +585,12 @@ export default function AllocationsPage() {
           </select>
           <button onClick={handleAddAcct}
             className="rounded-lg border-none px-4 py-2 text-sm font-semibold text-white"
-            style={{ background: 'linear-gradient(135deg, #3B82F6, #2563EB)', cursor: 'pointer', opacity: newAcct.name.trim() ? 1 : 0.4 }}>
+            style={{ background: 'var(--amber)', color: '#0A0A0B', cursor: 'pointer', opacity: newAcct.name.trim() ? 1 : 0.4 }}>
             + Add
           </button>
         </div>
 
-        <div className="mb-3 text-[10px] font-semibold" style={{ color: totalPct > 100 ? '#F87171' : '#64748B' }}>
+        <div className="mb-3 text-[10px] font-semibold" style={{ color: totalPct > 100 ? 'var(--red)' : 'var(--text-muted)' }}>
           Total: {totalPct.toFixed(1)}% allocated &middot; {unallocated.toFixed(1)}% unallocated
           {totalPct > 100 && ' \u2014 OVER 100%!'}
         </div>
@@ -616,21 +614,21 @@ export default function AllocationsPage() {
                 <div className="flex justify-end gap-2">
                   <button onClick={() => setEditAcct(null)}
                     className="rounded border px-3 py-1 text-[11px] font-semibold"
-                    style={{ borderColor: '#1E293B', color: '#64748B', background: 'transparent', cursor: 'pointer' }}>Cancel</button>
+                    style={{ borderColor: 'var(--border)', color: 'var(--text-muted)', background: 'transparent', cursor: 'pointer' }}>Cancel</button>
                   <button onClick={handleSaveAcct}
                     className="rounded border-none px-3 py-1 text-[11px] font-semibold text-white"
-                    style={{ background: 'linear-gradient(135deg, #3B82F6, #2563EB)', cursor: 'pointer' }}>Save</button>
+                    style={{ background: 'var(--amber)', color: '#0A0A0B', cursor: 'pointer' }}>Save</button>
                 </div>
               </div>
             );
           }
           return (
-            <div key={acct.id} className="flex items-center gap-2.5 rounded-md px-1 py-2.5 transition-colors hover:bg-[#1A2332]"
-              style={{ borderBottom: '1px solid #1E293B22' }}>
-              <span className="min-w-[45px] text-right text-xs" style={{ fontFamily: "'Space Mono', monospace", color: '#64748B' }}>
+            <div key={acct.id} className="flex items-center gap-2.5 rounded-md px-1 py-2.5 transition-colors hover:bg-[var(--card-hover)]"
+              style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+              <span className="min-w-[45px] text-right text-xs" style={{ fontFamily: "'Space Mono', monospace", color: 'var(--text-muted)' }}>
                 {Number(acct.percentage) > 0 ? acct.percentage + '%' : '0%'}
               </span>
-              <span className="flex-1 text-[13px] font-medium" style={{ color: '#CBD5E1' }}>{acct.name}</span>
+              <span className="flex-1 text-[13px] font-medium" style={{ color: 'var(--text)' }}>{acct.name}</span>
               {acct.tag && (
                 <span className="rounded px-1.5 py-0.5 text-[8px] font-bold"
                   style={{ color: TAG_COLORS[acct.tag], background: TAG_COLORS[acct.tag] + '22' }}>
@@ -639,20 +637,20 @@ export default function AllocationsPage() {
               )}
               {confirmDel === acct.id ? (
                 <div className="flex items-center gap-1">
-                  <span className="text-[10px]" style={{ color: '#F87171' }}>Delete?</span>
+                  <span className="text-[10px]" style={{ color: 'var(--red)' }}>Delete?</span>
                   <button onClick={() => handleDeleteAcct(acct.id)}
                     className="rounded border px-2 py-0.5 text-[10px] font-semibold"
-                    style={{ borderColor: '#F8717133', color: '#F87171', background: 'transparent', cursor: 'pointer' }}>Yes</button>
+                    style={{ borderColor: '#F8717133', color: 'var(--red)', background: 'transparent', cursor: 'pointer' }}>Yes</button>
                   <button onClick={() => setConfirmDel(null)}
                     className="rounded border px-2 py-0.5 text-[10px] font-semibold"
-                    style={{ borderColor: '#1E293B', color: '#64748B', background: 'transparent', cursor: 'pointer' }}>No</button>
+                    style={{ borderColor: 'var(--border)', color: 'var(--text-muted)', background: 'transparent', cursor: 'pointer' }}>No</button>
                 </div>
               ) : (
                 <>
                   <button onClick={() => setEditAcct({ ...acct })}
-                    className="border-none bg-transparent px-1.5 py-0.5 text-xs" style={{ color: '#64748B', cursor: 'pointer' }}>&#x270E;</button>
+                    className="border-none bg-transparent px-1.5 py-0.5 text-xs" style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>&#x270E;</button>
                   <button onClick={() => setConfirmDel(acct.id)}
-                    className="border-none bg-transparent px-1.5 py-0.5 text-xs" style={{ color: '#64748B', cursor: 'pointer' }}>&#x2715;</button>
+                    className="border-none bg-transparent px-1.5 py-0.5 text-xs" style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>&#x2715;</button>
                 </>
               )}
             </div>
@@ -668,31 +666,31 @@ export default function AllocationsPage() {
             onKeyDown={(e) => { if (e.key === 'Enter') handleAddCard(); }} />
           <button onClick={handleAddCard}
             className="rounded-lg border-none px-4 py-2 text-sm font-semibold text-white"
-            style={{ background: 'linear-gradient(135deg, #3B82F6, #2563EB)', cursor: 'pointer', opacity: newCard.trim() ? 1 : 0.4 }}>
+            style={{ background: 'var(--amber)', color: '#0A0A0B', cursor: 'pointer', opacity: newCard.trim() ? 1 : 0.4 }}>
             + Add
           </button>
         </div>
         {cards.map((card) => (
-          <div key={card.id} className="flex items-center gap-2.5 rounded-md px-1 py-2.5 transition-colors hover:bg-[#1A2332]"
-            style={{ borderBottom: '1px solid #1E293B22' }}>
-            <span className="flex-1 text-[13px] font-medium" style={{ color: '#CBD5E1' }}>{card.name}</span>
+          <div key={card.id} className="flex items-center gap-2.5 rounded-md px-1 py-2.5 transition-colors hover:bg-[var(--card-hover)]"
+            style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+            <span className="flex-1 text-[13px] font-medium" style={{ color: 'var(--text)' }}>{card.name}</span>
             {confirmDel === card.id ? (
               <div className="flex items-center gap-1">
                 <button onClick={() => handleDeleteCard(card.id)}
                   className="rounded border px-2 py-0.5 text-[10px] font-semibold"
-                  style={{ borderColor: '#F8717133', color: '#F87171', background: 'transparent', cursor: 'pointer' }}>Yes</button>
+                  style={{ borderColor: '#F8717133', color: 'var(--red)', background: 'transparent', cursor: 'pointer' }}>Yes</button>
                 <button onClick={() => setConfirmDel(null)}
                   className="rounded border px-2 py-0.5 text-[10px] font-semibold"
-                  style={{ borderColor: '#1E293B', color: '#64748B', background: 'transparent', cursor: 'pointer' }}>No</button>
+                  style={{ borderColor: 'var(--border)', color: 'var(--text-muted)', background: 'transparent', cursor: 'pointer' }}>No</button>
               </div>
             ) : (
               <button onClick={() => setConfirmDel(card.id)}
-                className="border-none bg-transparent px-1.5 py-0.5 text-xs" style={{ color: '#64748B', cursor: 'pointer' }}>&#x2715;</button>
+                className="border-none bg-transparent px-1.5 py-0.5 text-xs" style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>&#x2715;</button>
             )}
           </div>
         ))}
         {cards.length === 0 && (
-          <div className="py-4 text-center text-xs" style={{ color: '#475569' }}>No credit cards added yet.</div>
+          <div className="py-4 text-center text-xs" style={{ color: 'var(--text-disabled)' }}>No credit cards added yet.</div>
         )}
       </Modal>
     </div>

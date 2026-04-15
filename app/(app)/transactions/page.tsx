@@ -12,8 +12,11 @@ import type { Category, Transaction } from '@/types';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-const inputStyle = "w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition-colors focus:border-blue-500";
-const inputColors = { background: '#0A0E17', borderColor: '#1E293B', color: '#E2E8F0' };
+const inputStyle = "w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition-colors";
+const inputColors = { background: 'var(--bg)', borderColor: 'var(--border)', color: 'var(--text)' };
+
+const GREEN = '#34D399';
+const RED = '#F87171';
 
 type TransactionWithCategory = Transaction & { category?: Category | null };
 
@@ -242,7 +245,7 @@ export default function TransactionsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="text-sm" style={{ color: '#64748B' }}>Loading transactions...</div>
+        <div className="text-sm" style={{ color: 'var(--text-muted)' }}>Loading transactions...</div>
       </div>
     );
   }
@@ -253,14 +256,12 @@ export default function TransactionsPage() {
       <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1
-            className="mb-1 text-2xl font-bold"
+            className="mb-1 text-2xl font-bold heading-gradient"
             style={{ fontFamily: "'Space Mono', monospace" }}
           >
-            <span className="bg-gradient-to-r from-emerald-400 to-blue-500 bg-clip-text text-transparent">
-              Transactions
-            </span>
+            Transactions
           </h1>
-          <p className="text-sm" style={{ color: '#64748B' }}>
+          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
             {transactions.length} total transactions
           </p>
         </div>
@@ -268,12 +269,12 @@ export default function TransactionsPage() {
 
       {/* Summary Cards */}
       <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Card label="Revenue" value={formatMoney(totalRev)} accent="#34D399" />
-        <Card label="Expenses" value={formatMoney(Math.abs(totalExp))} accent="#F87171" />
+        <Card label="Revenue" value={formatMoney(totalRev)} accent={GREEN} />
+        <Card label="Expenses" value={formatMoney(Math.abs(totalExp))} accent={RED} />
         <Card
           label="Net Income"
           value={formatMoney(netIncome)}
-          accent={netIncome >= 0 ? '#34D399' : '#F87171'}
+          accent={netIncome >= 0 ? GREEN : RED}
           sub={totalRev ? (((netIncome / totalRev) * 100).toFixed(1) + '% margin') : undefined}
         />
         <Card label="Transactions" value={transactions.length.toString()} accent="#818CF8" sub={activeMonths.length + ' months tracked'} />
@@ -311,7 +312,7 @@ export default function TransactionsPage() {
         <button
           onClick={() => setShowCatMgr(true)}
           className="rounded-lg border-none px-4 py-2 text-xs font-semibold text-white"
-          style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', cursor: 'pointer' }}
+          style={{ background: 'transparent', border: '1px solid var(--amber)', color: 'var(--amber)', cursor: 'pointer' }}
         >
           Categories
         </button>
@@ -320,7 +321,7 @@ export default function TransactionsPage() {
             onClick={handleRecategorize}
             disabled={recategorizing}
             className="rounded-lg border-none px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
-            style={{ background: 'linear-gradient(135deg, #10B981, #059669)', cursor: 'pointer' }}
+            style={{ background: 'transparent', border: '1px solid var(--green)', color: 'var(--green)', cursor: 'pointer' }}
           >
             {recategorizing ? 'Categorizing...' : `AI Categorize (${transactions.filter((t) => !t.category_id).length})`}
           </button>
@@ -328,20 +329,20 @@ export default function TransactionsPage() {
         <button
           onClick={() => setShowImport(true)}
           className="rounded-lg border-none px-4 py-2 text-xs font-semibold text-white"
-          style={{ background: 'linear-gradient(135deg, #8B5CF6, #6D28D9)', cursor: 'pointer' }}
+          style={{ background: 'var(--amber-soft)', border: '1px solid var(--amber)', color: 'var(--amber)', cursor: 'pointer' }}
         >
           Import CSV
         </button>
         <button
           onClick={() => setShowAdd(true)}
           className="rounded-lg border-none px-4 py-2 text-xs font-semibold text-white"
-          style={{ background: 'linear-gradient(135deg, #3B82F6, #2563EB)', cursor: 'pointer' }}
+          style={{ background: 'var(--amber)', color: '#0A0A0B', cursor: 'pointer' }}
         >
           + Add
         </button>
       </div>
 
-      <div className="mb-2 text-xs" style={{ color: '#475569' }}>
+      <div className="mb-2 text-xs" style={{ color: 'var(--text-disabled)' }}>
         {filtered.length} transactions{filtered.length !== transactions.length ? ` (filtered from ${transactions.length})` : ''}
       </div>
 
@@ -350,21 +351,21 @@ export default function TransactionsPage() {
           style={{
             background: recategorizeResult.includes('Categorized') ? '#0D3B2E' : '#3B2E0D',
             borderColor: recategorizeResult.includes('Categorized') ? '#34D39933' : '#FBBF2433',
-            color: recategorizeResult.includes('Categorized') ? '#34D399' : '#FBBF24',
+            color: recategorizeResult.includes('Categorized') ? 'var(--green)' : 'var(--amber-warn)',
           }}>
           {recategorizeResult}
         </div>
       )}
 
       {/* Transaction Table */}
-      <div className="overflow-hidden rounded-xl border" style={{ background: '#111827', borderColor: '#1E293B' }}>
+      <div className="overflow-hidden rounded-xl border" style={{ background: 'var(--card)', borderColor: 'var(--border)' }}>
         <div
           className="grid gap-0 px-4 py-3 text-[10px] font-semibold uppercase tracking-wider"
           style={{
             gridTemplateColumns: '0.8fr 2fr 0.9fr 1.2fr',
-            background: '#0F1629',
-            borderBottom: '1px solid #1E293B',
-            color: '#475569',
+            background: 'var(--bg-elevated)',
+            borderBottom: '1px solid var(--border)',
+            color: 'var(--text-disabled)',
           }}
         >
           <div>Date</div>
@@ -375,7 +376,7 @@ export default function TransactionsPage() {
 
         <div className="max-h-[500px] overflow-auto">
           {paged.length === 0 && (
-            <div className="py-10 text-center text-sm" style={{ color: '#475569' }}>
+            <div className="py-10 text-center text-sm" style={{ color: 'var(--text-disabled)' }}>
               {transactions.length === 0 ? 'No transactions yet. Import a CSV or add one manually.' : 'No transactions match your filters.'}
             </div>
           )}
@@ -383,27 +384,27 @@ export default function TransactionsPage() {
             <div
               key={t.id}
               onClick={() => { setEditTxn({ ...t }); setConfirmDel(null); }}
-              className="grid cursor-pointer items-center gap-0 px-4 py-2.5 transition-colors hover:bg-[#1A2332]"
+              className="grid cursor-pointer items-center gap-0 px-4 py-2.5 transition-colors hover:bg-[var(--card-hover)]"
               style={{
                 gridTemplateColumns: '0.8fr 2fr 0.9fr 1.2fr',
-                borderBottom: '1px solid #1E293B11',
+                borderBottom: '1px solid var(--border-subtle)',
               }}
             >
-              <div className="text-xs" style={{ color: '#94A3B8' }}>{formatDate(t.date)}</div>
+              <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>{formatDate(t.date)}</div>
               <div>
-                <div className="text-[13px] font-medium" style={{ color: '#E2E8F0' }}>{t.description}</div>
-                {t.note && <div className="mt-0.5 text-[10px]" style={{ color: '#475569' }}>{t.note}</div>}
+                <div className="text-[13px] font-medium" style={{ color: 'var(--text)' }}>{t.description}</div>
+                {t.note && <div className="mt-0.5 text-[10px]" style={{ color: 'var(--text-disabled)' }}>{t.note}</div>}
               </div>
               <div
                 className="text-right text-[13px] font-bold"
                 style={{
                   fontFamily: "'Space Mono', monospace",
-                  color: Number(t.amount) >= 0 ? '#34D399' : '#F87171',
+                  color: Number(t.amount) >= 0 ? 'var(--green)' : 'var(--red)',
                 }}
               >
                 {formatMoney(Number(t.amount))}
               </div>
-              <div className="text-right text-xs" style={{ color: '#64748B' }}>
+              <div className="text-right text-xs" style={{ color: 'var(--text-muted)' }}>
                 {getCategoryName(t)}
               </div>
             </div>
@@ -418,18 +419,18 @@ export default function TransactionsPage() {
             onClick={() => setPage((p) => Math.max(0, p - 1))}
             disabled={page === 0}
             className="rounded-lg border px-3 py-1.5 text-xs font-semibold disabled:opacity-30"
-            style={{ borderColor: '#1E293B', color: '#94A3B8', background: '#111827', cursor: 'pointer' }}
+            style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)', background: 'var(--card)', cursor: 'pointer' }}
           >
             Prev
           </button>
-          <span className="text-xs" style={{ color: '#64748B' }}>
+          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
             Page {page + 1} of {totalPages}
           </span>
           <button
             onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
             disabled={page >= totalPages - 1}
             className="rounded-lg border px-3 py-1.5 text-xs font-semibold disabled:opacity-30"
-            style={{ borderColor: '#1E293B', color: '#94A3B8', background: '#111827', cursor: 'pointer' }}
+            style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)', background: 'var(--card)', cursor: 'pointer' }}
           >
             Next
           </button>
@@ -493,18 +494,18 @@ export default function TransactionsPage() {
             <div className="mt-2 flex flex-wrap justify-between gap-2">
               {confirmDel === editTxn.id ? (
                 <div className="flex items-center gap-1.5">
-                  <span className="text-xs" style={{ color: '#F87171' }}>Sure?</span>
+                  <span className="text-xs" style={{ color: 'var(--red)' }}>Sure?</span>
                   <button
                     onClick={() => handleDelete(editTxn.id)}
                     className="rounded border px-3 py-1 text-xs font-semibold"
-                    style={{ borderColor: '#F8717133', color: '#F87171', background: 'transparent', cursor: 'pointer' }}
+                    style={{ borderColor: '#F8717133', color: 'var(--red)', background: 'transparent', cursor: 'pointer' }}
                   >
                     Yes
                   </button>
                   <button
                     onClick={() => setConfirmDel(null)}
                     className="rounded border px-3 py-1 text-xs font-semibold"
-                    style={{ borderColor: '#1E293B', color: '#64748B', background: 'transparent', cursor: 'pointer' }}
+                    style={{ borderColor: 'var(--border)', color: 'var(--text-muted)', background: 'transparent', cursor: 'pointer' }}
                   >
                     No
                   </button>
@@ -513,7 +514,7 @@ export default function TransactionsPage() {
                 <button
                   onClick={() => setConfirmDel(editTxn.id)}
                   className="rounded-lg border px-4 py-2 text-sm font-semibold"
-                  style={{ borderColor: '#F8717133', color: '#F87171', background: 'transparent', cursor: 'pointer' }}
+                  style={{ borderColor: '#F8717133', color: 'var(--red)', background: 'transparent', cursor: 'pointer' }}
                 >
                   Delete
                 </button>
@@ -521,7 +522,7 @@ export default function TransactionsPage() {
               <button
                 onClick={handleSaveEdit}
                 className="rounded-lg border-none px-5 py-2 text-sm font-semibold text-white"
-                style={{ background: 'linear-gradient(135deg, #3B82F6, #2563EB)', cursor: 'pointer' }}
+                style={{ background: 'var(--amber)', color: '#0A0A0B', cursor: 'pointer' }}
               >
                 Save
               </button>
@@ -588,7 +589,7 @@ export default function TransactionsPage() {
           <button
             onClick={() => setShowAdd(false)}
             className="rounded-lg border px-4 py-2 text-sm font-semibold"
-            style={{ borderColor: '#1E293B', color: '#64748B', background: 'transparent', cursor: 'pointer' }}
+            style={{ borderColor: 'var(--border)', color: 'var(--text-muted)', background: 'transparent', cursor: 'pointer' }}
           >
             Cancel
           </button>
@@ -596,7 +597,7 @@ export default function TransactionsPage() {
             onClick={handleAdd}
             className="rounded-lg border-none px-5 py-2 text-sm font-semibold text-white"
             style={{
-              background: 'linear-gradient(135deg, #3B82F6, #2563EB)',
+              background: 'var(--amber)', color: '#0A0A0B',
               opacity: newTxn.description.trim() && newTxn.date ? 1 : 0.4,
               cursor: 'pointer',
             }}

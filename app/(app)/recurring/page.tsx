@@ -28,8 +28,8 @@ type StrategyCard = {
   sort_order: number;
 };
 
-const inputStyle = "w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition-colors focus:border-blue-500";
-const inputColors = { background: '#0A0E17', borderColor: '#1E293B', color: '#E2E8F0' };
+const inputStyle = "w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition-colors";
+const inputColors = { background: 'var(--bg)', borderColor: 'var(--border)', color: 'var(--text)' };
 
 type BillWithCategory = RecurringBill & { category?: Category | null };
 
@@ -238,7 +238,7 @@ export default function RecurringPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="text-sm" style={{ color: '#64748B' }}>Loading bills...</div>
+        <div className="text-sm" style={{ color: 'var(--text-muted)' }}>Loading bills...</div>
       </div>
     );
   }
@@ -248,12 +248,10 @@ export default function RecurringPage() {
       {/* Header */}
       <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="mb-1 text-2xl font-bold" style={{ fontFamily: "'Space Mono', monospace" }}>
-            <span className="bg-gradient-to-r from-emerald-400 to-blue-500 bg-clip-text text-transparent">
-              Recurring Bills
-            </span>
+          <h1 className="mb-1 text-2xl font-bold heading-gradient" style={{ fontFamily: "'Space Mono', monospace" }}>
+            Recurring Bills
           </h1>
-          <p className="text-sm" style={{ color: '#64748B' }}>
+          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
             Click a row to edit &middot; Tap status badges to cycle
           </p>
         </div>
@@ -261,14 +259,14 @@ export default function RecurringPage() {
           <button
             onClick={() => setShowSourceMgr(true)}
             className="rounded-lg border-none px-4 py-2 text-xs font-semibold text-white"
-            style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', cursor: 'pointer' }}
+            style={{ background: 'transparent', border: '1px solid var(--amber)', color: 'var(--amber)', cursor: 'pointer' }}
           >
             Payment Sources
           </button>
           <button
             onClick={() => setShowAdd(true)}
             className="flex items-center gap-1.5 rounded-lg border-none px-4 py-2 text-xs font-semibold text-white"
-            style={{ background: 'linear-gradient(135deg, #3B82F6, #2563EB)', cursor: 'pointer' }}
+            style={{ background: 'var(--amber)', color: '#0A0A0B', cursor: 'pointer' }}
           >
             <span className="text-lg leading-none">+</span> Add Expense
           </button>
@@ -280,7 +278,7 @@ export default function RecurringPage() {
         <Card label="Active Monthly" value={'$' + goodTotal.toLocaleString()} accent="#34D399" sub={statusCounts.good + ' bills'} />
         <Card label="Paused" value={'$' + pausedTotal.toLocaleString()} accent="#FBBF24" sub={statusCounts.paused + ' items'} />
         <Card label="Cancelled" value={'$' + cancelledTotal.toLocaleString()} accent="#F87171" sub={statusCounts.cancelled + ' items'} />
-        <Card label="Total Items" value={bills.length.toString()} accent="#818CF8" sub="tracked" />
+        <Card label="Total Items" value={bills.length.toString()} accent="#F59E0B" sub="tracked" />
       </div>
 
       {/* Filter Tabs */}
@@ -291,9 +289,9 @@ export default function RecurringPage() {
             onClick={() => setFilter(s)}
             className="rounded-lg border px-4 py-2 text-xs font-semibold"
             style={{
-              borderColor: filter === s ? '#3B82F6' : '#1E293B',
-              background: filter === s ? '#1E3A5F' : '#111827',
-              color: filter === s ? '#93C5FD' : '#64748B',
+              borderColor: filter === s ? 'var(--amber)' : 'var(--border)',
+              background: filter === s ? 'var(--amber-soft)' : 'var(--card)',
+              color: filter === s ? 'var(--amber-hover)' : 'var(--text-muted)',
               cursor: 'pointer',
             }}
           >
@@ -304,14 +302,14 @@ export default function RecurringPage() {
       </div>
 
       {/* Bills Table */}
-      <div className="mb-8 overflow-hidden rounded-xl border" style={{ background: '#111827', borderColor: '#1E293B' }}>
+      <div className="mb-8 overflow-hidden rounded-xl border" style={{ background: 'var(--card)', borderColor: 'var(--border)' }}>
         <div
           className="grid px-5 py-3 text-[11px] font-semibold uppercase tracking-wider"
           style={{
             gridTemplateColumns: '2fr 0.9fr 0.9fr 0.8fr 1.1fr',
-            background: '#0F1629',
-            borderBottom: '1px solid #1E293B',
-            color: '#475569',
+            background: 'var(--bg-elevated)',
+            borderBottom: '1px solid var(--border)',
+            color: 'var(--text-disabled)',
           }}
         >
           <div>Name</div>
@@ -322,7 +320,7 @@ export default function RecurringPage() {
         </div>
 
         {filtered.length === 0 && (
-          <div className="py-10 text-center text-sm" style={{ color: '#475569' }}>
+          <div className="py-10 text-center text-sm" style={{ color: 'var(--text-disabled)' }}>
             {bills.length === 0 ? 'No recurring bills yet. Add one to get started.' : 'No bills in this category.'}
           </div>
         )}
@@ -331,15 +329,15 @@ export default function RecurringPage() {
           <div
             key={bill.id}
             onClick={() => { setEditBill({ ...bill }); setConfirmDel(null); }}
-            className="grid cursor-pointer items-center px-5 py-3 transition-colors hover:bg-[#1A2332]"
+            className="grid cursor-pointer items-center px-5 py-3 transition-colors hover:bg-[var(--card-hover)]"
             style={{
               gridTemplateColumns: '2fr 0.9fr 0.9fr 0.8fr 1.1fr',
-              borderBottom: '1px solid #1E293B22',
+              borderBottom: '1px solid var(--border-subtle)',
             }}
           >
             <div>
-              <div className="text-sm font-medium" style={{ color: '#E2E8F0' }}>{bill.name}</div>
-              <div className="mt-0.5 text-[11px]" style={{ color: '#475569' }}>
+              <div className="text-sm font-medium" style={{ color: 'var(--text)' }}>{bill.name}</div>
+              <div className="mt-0.5 text-[11px]" style={{ color: 'var(--text-disabled)' }}>
                 {getCategoryName(bill)}{bill.note ? ` \u00B7 ${bill.note}` : ''}
               </div>
             </div>
@@ -358,10 +356,10 @@ export default function RecurringPage() {
             >
               <StatusBadge status={bill.status} onClick={() => {}} />
             </div>
-            <div className="text-center text-[13px]" style={{ color: '#94A3B8' }}>
+            <div className="text-center text-[13px]" style={{ color: 'var(--text-secondary)' }}>
               {formatDate(bill.due_date)}
             </div>
-            <div className="text-xs" style={{ color: '#64748B' }}>{bill.paid_from}</div>
+            <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{bill.paid_from}</div>
           </div>
         ))}
       </div>
@@ -370,21 +368,21 @@ export default function RecurringPage() {
       <div className="mb-4 flex items-center justify-between">
         <h2
           className="text-lg font-bold"
-          style={{ fontFamily: "'Space Mono', monospace", color: '#94A3B8' }}
+          style={{ fontFamily: "'Space Mono', monospace", color: 'var(--text-secondary)' }}
         >
           Credit Card Strategy
         </h2>
         <button
           onClick={() => setShowAddCard(true)}
           className="flex items-center gap-1.5 rounded-lg border-none px-3 py-1.5 text-xs font-semibold text-white"
-          style={{ background: 'linear-gradient(135deg, #3B82F6, #2563EB)', cursor: 'pointer' }}
+          style={{ background: 'var(--amber)', color: '#0A0A0B', cursor: 'pointer' }}
         >
           <span className="text-sm leading-none">+</span> Add Card
         </button>
       </div>
 
       {strategyCards.length === 0 && (
-        <div className="rounded-xl border py-8 text-center text-sm" style={{ background: '#111827', borderColor: '#1E293B', color: '#475569' }}>
+        <div className="rounded-xl border py-8 text-center text-sm" style={{ background: 'var(--card)', borderColor: 'var(--border)', color: 'var(--text-disabled)' }}>
           No credit cards added yet. Click &ldquo;Add Card&rdquo; to set up your strategy.
         </div>
       )}
@@ -394,7 +392,7 @@ export default function RecurringPage() {
           <div
             key={card.id}
             className="overflow-hidden rounded-xl border transition-colors"
-            style={{ background: '#111827', borderColor: '#1E293B' }}
+            style={{ background: 'var(--card)', borderColor: 'var(--border)' }}
           >
             <div className="h-1" style={{ background: `linear-gradient(90deg, ${card.color}, ${card.color}88)` }} />
             <div className="px-4 py-4">
@@ -403,8 +401,8 @@ export default function RecurringPage() {
                   className="flex-1 cursor-pointer"
                   onClick={() => setExpandedCard(expandedCard === card.sort_order ? null : card.sort_order)}
                 >
-                  <div className="text-[15px] font-semibold" style={{ color: '#E2E8F0' }}>{card.name}</div>
-                  <div className="mt-0.5 text-[11px]" style={{ color: '#64748B' }}>{card.purpose}</div>
+                  <div className="text-[15px] font-semibold" style={{ color: 'var(--text)' }}>{card.name}</div>
+                  <div className="mt-0.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>{card.purpose}</div>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="text-[13px] font-bold" style={{ fontFamily: "'Space Mono', monospace", color: card.color }}>
@@ -413,18 +411,18 @@ export default function RecurringPage() {
                   <button
                     onClick={() => setEditCard({ ...card })}
                     className="border-none bg-transparent px-1 py-0.5 text-xs"
-                    style={{ color: '#64748B', cursor: 'pointer' }}
+                    style={{ color: 'var(--text-muted)', cursor: 'pointer' }}
                   >
                     &#x270E;
                   </button>
                 </div>
               </div>
               {expandedCard === card.sort_order && (
-                <div className="mt-3 border-t pt-3 text-xs leading-relaxed" style={{ borderColor: '#1E293B', color: '#94A3B8' }}>
-                  <div className="mb-2"><span style={{ color: '#64748B' }}>Rewards: </span>{card.bonus || 'None'}</div>
+                <div className="mt-3 border-t pt-3 text-xs leading-relaxed" style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
+                  <div className="mb-2"><span style={{ color: 'var(--text-muted)' }}>Rewards: </span>{card.bonus || 'None'}</div>
                   <div className="flex flex-wrap justify-between gap-2">
-                    <div><span style={{ color: '#64748B' }}>Target: </span><span className="font-semibold" style={{ color: '#E2E8F0' }}>{card.pay_range || '\u2014'}</span></div>
-                    <div><span style={{ color: '#64748B' }}>Due: </span><span className="font-semibold" style={{ color: '#E2E8F0' }}>{card.pay_date || '\u2014'}</span></div>
+                    <div><span style={{ color: 'var(--text-muted)' }}>Target: </span><span className="font-semibold" style={{ color: 'var(--text)' }}>{card.pay_range || '\u2014'}</span></div>
+                    <div><span style={{ color: 'var(--text-muted)' }}>Due: </span><span className="font-semibold" style={{ color: 'var(--text)' }}>{card.pay_date || '\u2014'}</span></div>
                   </div>
                 </div>
               )}
@@ -433,7 +431,7 @@ export default function RecurringPage() {
         ))}
       </div>
       {strategyCards.length > 0 && (
-        <p className="mt-2 text-center text-[11px]" style={{ color: '#334155' }}>Tap a card to expand &middot; Click &#x270E; to edit</p>
+        <p className="mt-2 text-center text-[11px]" style={{ color: 'var(--text-disabled)' }}>Tap a card to expand &middot; Click &#x270E; to edit</p>
       )}
 
       {/* Edit Modal */}
@@ -482,28 +480,28 @@ export default function RecurringPage() {
             <div className="mt-2 flex flex-wrap justify-between gap-2">
               {confirmDel === editBill.id ? (
                 <div className="flex items-center gap-1.5">
-                  <span className="text-xs" style={{ color: '#F87171' }}>Sure?</span>
+                  <span className="text-xs" style={{ color: 'var(--red)' }}>Sure?</span>
                   <button onClick={() => handleDelete(editBill.id)}
                     className="rounded border px-3 py-1 text-xs font-semibold"
-                    style={{ borderColor: '#F8717133', color: '#F87171', background: 'transparent', cursor: 'pointer' }}>
+                    style={{ borderColor: '#F8717133', color: 'var(--red)', background: 'transparent', cursor: 'pointer' }}>
                     Yes, delete
                   </button>
                   <button onClick={() => setConfirmDel(null)}
                     className="rounded border px-3 py-1 text-xs font-semibold"
-                    style={{ borderColor: '#1E293B', color: '#64748B', background: 'transparent', cursor: 'pointer' }}>
+                    style={{ borderColor: 'var(--border)', color: 'var(--text-muted)', background: 'transparent', cursor: 'pointer' }}>
                     Cancel
                   </button>
                 </div>
               ) : (
                 <button onClick={() => setConfirmDel(editBill.id)}
                   className="rounded-lg border px-4 py-2 text-sm font-semibold"
-                  style={{ borderColor: '#F8717133', color: '#F87171', background: 'transparent', cursor: 'pointer' }}>
+                  style={{ borderColor: '#F8717133', color: 'var(--red)', background: 'transparent', cursor: 'pointer' }}>
                   Delete
                 </button>
               )}
               <button onClick={handleSaveEdit}
                 className="rounded-lg border-none px-5 py-2 text-sm font-semibold text-white"
-                style={{ background: 'linear-gradient(135deg, #3B82F6, #2563EB)', cursor: 'pointer' }}>
+                style={{ background: 'var(--amber)', color: '#0A0A0B', cursor: 'pointer' }}>
                 Save Changes
               </button>
             </div>
@@ -555,13 +553,13 @@ export default function RecurringPage() {
         <div className="mt-2 flex justify-end gap-2">
           <button onClick={() => setShowAdd(false)}
             className="rounded-lg border px-4 py-2 text-sm font-semibold"
-            style={{ borderColor: '#1E293B', color: '#64748B', background: 'transparent', cursor: 'pointer' }}>
+            style={{ borderColor: 'var(--border)', color: 'var(--text-muted)', background: 'transparent', cursor: 'pointer' }}>
             Cancel
           </button>
           <button onClick={handleAdd}
             className="rounded-lg border-none px-5 py-2 text-sm font-semibold text-white"
             style={{
-              background: 'linear-gradient(135deg, #3B82F6, #2563EB)',
+              background: 'var(--amber)', color: '#0A0A0B',
               opacity: newBill.name.trim() ? 1 : 0.4,
               cursor: 'pointer',
             }}>
@@ -584,7 +582,7 @@ export default function RecurringPage() {
           <button
             onClick={handleAddSource}
             className="rounded-lg border-none px-4 py-2 text-sm font-semibold text-white"
-            style={{ background: 'linear-gradient(135deg, #3B82F6, #2563EB)', cursor: 'pointer', opacity: newSource.trim() ? 1 : 0.4 }}
+            style={{ background: 'var(--amber)', color: '#0A0A0B', cursor: 'pointer', opacity: newSource.trim() ? 1 : 0.4 }}
           >
             + Add
           </button>
@@ -598,8 +596,8 @@ export default function RecurringPage() {
           return (
             <div
               key={source}
-              className="flex items-center gap-2.5 rounded-md px-3 py-2 transition-colors hover:bg-[#1A2332]"
-              style={{ borderBottom: '1px solid #1E293B22' }}
+              className="flex items-center gap-2.5 rounded-md px-3 py-2 transition-colors hover:bg-[var(--card-hover)]"
+              style={{ borderBottom: '1px solid var(--border-subtle)' }}
             >
               {editSourceIdx === i ? (
                 <input
@@ -617,23 +615,23 @@ export default function RecurringPage() {
               ) : (
                 <span className="flex-1 text-[13px]" style={{ color: '#CBD5E1' }}>{source}</span>
               )}
-              <span className="text-[10px]" style={{ color: '#475569' }}>{billCount} bills</span>
+              <span className="text-[10px]" style={{ color: 'var(--text-disabled)' }}>{billCount} bills</span>
               {isDefault && !isCustom && (
-                <span className="text-[9px]" style={{ color: '#334155' }}>default</span>
+                <span className="text-[9px]" style={{ color: 'var(--text-disabled)' }}>default</span>
               )}
               {(isCustom || !isDefault) && (
                 <>
                   <button
                     onClick={() => { setEditSourceIdx(i); setEditSourceName(source); }}
                     className="border-none bg-transparent px-1.5 py-0.5 text-xs"
-                    style={{ color: '#64748B', cursor: 'pointer' }}
+                    style={{ color: 'var(--text-muted)', cursor: 'pointer' }}
                   >
                     &#x270E;
                   </button>
                   <button
                     onClick={() => handleDeleteSource(source)}
                     className="border-none bg-transparent px-1.5 py-0.5 text-xs"
-                    style={{ color: '#64748B', cursor: 'pointer' }}
+                    style={{ color: 'var(--text-muted)', cursor: 'pointer' }}
                   >
                     &#x2715;
                   </button>
@@ -643,7 +641,7 @@ export default function RecurringPage() {
           );
         })}
 
-        <p className="mt-4 text-[10px]" style={{ color: '#334155' }}>
+        <p className="mt-4 text-[10px]" style={{ color: 'var(--text-disabled)' }}>
           Default sources are always available. Custom sources can be edited or removed.
           Sources used by existing bills will appear automatically.
         </p>
@@ -691,10 +689,10 @@ export default function RecurringPage() {
         <div className="mt-2 flex justify-end gap-2">
           <button onClick={() => setShowAddCard(false)}
             className="rounded-lg border px-4 py-2 text-sm font-semibold"
-            style={{ borderColor: '#1E293B', color: '#64748B', background: 'transparent', cursor: 'pointer' }}>Cancel</button>
+            style={{ borderColor: 'var(--border)', color: 'var(--text-muted)', background: 'transparent', cursor: 'pointer' }}>Cancel</button>
           <button onClick={handleAddStrategyCard}
             className="rounded-lg border-none px-5 py-2 text-sm font-semibold text-white"
-            style={{ background: 'linear-gradient(135deg, #3B82F6, #2563EB)', cursor: 'pointer', opacity: newCard.name.trim() ? 1 : 0.4 }}>
+            style={{ background: 'var(--amber)', color: '#0A0A0B', cursor: 'pointer', opacity: newCard.name.trim() ? 1 : 0.4 }}>
             Add Card
           </button>
         </div>
@@ -744,22 +742,22 @@ export default function RecurringPage() {
             <div className="mt-2 flex flex-wrap justify-between gap-2">
               {confirmCardDel === editCard.id ? (
                 <div className="flex items-center gap-1.5">
-                  <span className="text-xs" style={{ color: '#F87171' }}>Sure?</span>
+                  <span className="text-xs" style={{ color: 'var(--red)' }}>Sure?</span>
                   <button onClick={() => handleDeleteStrategyCard(editCard.id)}
                     className="rounded border px-3 py-1 text-xs font-semibold"
-                    style={{ borderColor: '#F8717133', color: '#F87171', background: 'transparent', cursor: 'pointer' }}>Yes, delete</button>
+                    style={{ borderColor: '#F8717133', color: 'var(--red)', background: 'transparent', cursor: 'pointer' }}>Yes, delete</button>
                   <button onClick={() => setConfirmCardDel(null)}
                     className="rounded border px-3 py-1 text-xs font-semibold"
-                    style={{ borderColor: '#1E293B', color: '#64748B', background: 'transparent', cursor: 'pointer' }}>Cancel</button>
+                    style={{ borderColor: 'var(--border)', color: 'var(--text-muted)', background: 'transparent', cursor: 'pointer' }}>Cancel</button>
                 </div>
               ) : (
                 <button onClick={() => setConfirmCardDel(editCard.id)}
                   className="rounded-lg border px-4 py-2 text-sm font-semibold"
-                  style={{ borderColor: '#F8717133', color: '#F87171', background: 'transparent', cursor: 'pointer' }}>Delete</button>
+                  style={{ borderColor: '#F8717133', color: 'var(--red)', background: 'transparent', cursor: 'pointer' }}>Delete</button>
               )}
               <button onClick={handleSaveStrategyCard}
                 className="rounded-lg border-none px-5 py-2 text-sm font-semibold text-white"
-                style={{ background: 'linear-gradient(135deg, #3B82F6, #2563EB)', cursor: 'pointer' }}>Save Changes</button>
+                style={{ background: 'var(--amber)', color: '#0A0A0B', cursor: 'pointer' }}>Save Changes</button>
             </div>
           </>
         )}

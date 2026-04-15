@@ -51,8 +51,8 @@ type Props = {
 
 type Step = 'upload' | 'categorizing' | 'review';
 
-const inputStyle = "w-full rounded-lg border px-3 py-2 text-sm outline-none transition-colors focus:border-blue-500";
-const inputColors = { background: '#0A0E17', borderColor: '#1E293B', color: '#E2E8F0' };
+const inputStyle = "w-full rounded-lg border px-3 py-2 text-sm outline-none transition-colors";
+const inputColors = { background: 'var(--bg)', borderColor: 'var(--border)', color: 'var(--text)' };
 
 export default function CsvImport({ open, onClose, onImport, categories }: Props) {
   const [bank, setBank] = useState('Generic CSV');
@@ -251,14 +251,14 @@ export default function CsvImport({ open, onClose, onImport, categories }: Props
           <div
             className="mb-4 flex items-center gap-3 rounded-lg border px-4 py-3"
             style={{
-              borderColor: flipSigns ? '#FBBF2444' : '#1E293B',
-              background: flipSigns ? '#3B2E0D' : 'transparent',
+              borderColor: flipSigns ? '#FBBF2444' : 'var(--border)',
+              background: flipSigns ? '#2E220F' : 'transparent',
             }}
           >
             <button
               onClick={() => setFlipSigns(!flipSigns)}
               className="relative h-5 w-9 rounded-full transition-colors"
-              style={{ background: flipSigns ? '#FBBF24' : '#334155', cursor: 'pointer', border: 'none' }}
+              style={{ background: flipSigns ? 'var(--amber-warn)' : 'var(--border-strong)', cursor: 'pointer', border: 'none' }}
             >
               <div
                 className="absolute top-0.5 h-4 w-4 rounded-full transition-transform"
@@ -269,10 +269,10 @@ export default function CsvImport({ open, onClose, onImport, categories }: Props
               />
             </button>
             <div>
-              <div className="text-xs font-semibold" style={{ color: flipSigns ? '#FBBF24' : '#94A3B8' }}>
+              <div className="text-xs font-semibold" style={{ color: flipSigns ? 'var(--amber-warn)' : 'var(--text-secondary)' }}>
                 Credit Card Mode {flipSigns ? 'ON' : 'OFF'}
               </div>
-              <div className="text-[10px]" style={{ color: '#64748B' }}>
+              <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
                 {flipSigns
                   ? 'Signs will be flipped: purchases → expenses, payments → positive'
                   : 'Amounts imported as-is (use for checking/savings accounts)'}
@@ -292,7 +292,7 @@ export default function CsvImport({ open, onClose, onImport, categories }: Props
 
           {importData && (
             <>
-              <p className="mb-2 text-xs" style={{ color: '#64748B' }}>Map columns:</p>
+              <p className="mb-2 text-xs" style={{ color: 'var(--text-muted)' }}>Map columns:</p>
               <div className="mb-4 grid grid-cols-3 gap-2">
                 {(['date', 'desc', 'amount'] as const).map((f) => (
                   <Field key={f} label={f === 'desc' ? 'Description' : f.charAt(0).toUpperCase() + f.slice(1)}>
@@ -309,13 +309,13 @@ export default function CsvImport({ open, onClose, onImport, categories }: Props
                 ))}
               </div>
 
-              <div className="mb-4 rounded-lg border p-3" style={{ background: '#0A0E17', borderColor: '#1E293B' }}>
-                <div className="mb-1.5 text-[10px] font-semibold" style={{ color: '#64748B' }}>
+              <div className="mb-4 rounded-lg border p-3" style={{ background: 'var(--bg)', borderColor: 'var(--border)' }}>
+                <div className="mb-1.5 text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>
                   PREVIEW ({importData.rows.length} rows)
                 </div>
                 <div className="max-h-[120px] overflow-auto">
                   {preview.map((r, i) => (
-                    <div key={i} className="flex gap-3 py-1 text-xs" style={{ borderBottom: '1px solid #1E293B22', color: '#94A3B8' }}>
+                    <div key={i} className="flex gap-3 py-1 text-xs" style={{ borderBottom: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }}>
                       <span className="w-[75px]">{r[mapping.date]}</span>
                       <span className="flex-1">{r[mapping.desc]}</span>
                       <span className="w-[65px] text-right" style={{ fontFamily: "'Space Mono', monospace" }}>{r[mapping.amount]}</span>
@@ -328,14 +328,14 @@ export default function CsvImport({ open, onClose, onImport, categories }: Props
                 <button
                   onClick={handleSkipAi}
                   className="rounded-lg border px-4 py-2 text-sm font-semibold"
-                  style={{ borderColor: '#1E293B', color: '#64748B', background: 'transparent', cursor: 'pointer' }}
+                  style={{ borderColor: '#1E293B', color: 'var(--text-muted)', background: 'transparent', cursor: 'pointer' }}
                 >
                   Skip AI
                 </button>
                 <button
                   onClick={handleCategorize}
                   className="rounded-lg border-none px-4 py-2 text-sm font-semibold text-white"
-                  style={{ background: 'linear-gradient(135deg, #8B5CF6, #6D28D9)', cursor: 'pointer' }}
+                  style={{ background: 'var(--amber-soft)', border: '1px solid var(--amber)', color: 'var(--amber)', cursor: 'pointer' }}
                 >
                   Categorize with AI
                 </button>
@@ -352,10 +352,10 @@ export default function CsvImport({ open, onClose, onImport, categories }: Props
             className="mb-4 h-8 w-8 animate-spin rounded-full border-2 border-t-transparent"
             style={{ borderColor: '#3B82F6', borderTopColor: 'transparent' }}
           />
-          <div className="text-sm font-medium" style={{ color: '#E2E8F0' }}>
+          <div className="text-sm font-medium" style={{ color: 'var(--text)' }}>
             AI is categorizing {parsedRows.length} transactions...
           </div>
-          <div className="mt-1 text-xs" style={{ color: '#64748B' }}>
+          <div className="mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>
             Cleaning descriptions and matching categories
           </div>
         </div>
@@ -365,12 +365,12 @@ export default function CsvImport({ open, onClose, onImport, categories }: Props
       {step === 'review' && (
         <>
           {aiError && (
-            <div className="mb-4 rounded-lg border px-4 py-3 text-xs" style={{ background: '#3B2E0D', borderColor: '#FBBF2433', color: '#FBBF24' }}>
+            <div className="mb-4 rounded-lg border px-4 py-3 text-xs" style={{ background: '#2E220F', borderColor: '#FBBF2433', color: 'var(--amber-warn)' }}>
               {aiError}
             </div>
           )}
 
-          <div className="mb-3 text-xs" style={{ color: '#64748B' }}>
+          <div className="mb-3 text-xs" style={{ color: 'var(--text-muted)' }}>
             Review AI suggestions below. Edit any row before importing.
           </div>
 
@@ -382,7 +382,7 @@ export default function CsvImport({ open, onClose, onImport, categories }: Props
                 gridTemplateColumns: '2fr 1fr 1.5fr 60px',
                 background: '#0F1629',
                 borderBottom: '1px solid #1E293B',
-                color: '#475569',
+                color: 'var(--text-disabled)',
               }}
             >
               <div>Description</div>
@@ -404,12 +404,12 @@ export default function CsvImport({ open, onClose, onImport, categories }: Props
                 <div>
                   <input
                     className="w-full border-none bg-transparent text-xs outline-none"
-                    style={{ color: '#E2E8F0' }}
+                    style={{ color: 'var(--text)' }}
                     value={row.cleaned_description}
                     onChange={(e) => updateReviewRow(i, 'cleaned_description', e.target.value)}
                   />
                   {row.cleaned_description !== row.original_description && (
-                    <div className="text-[9px]" style={{ color: '#475569' }}>
+                    <div className="text-[9px]" style={{ color: 'var(--text-disabled)' }}>
                       was: {row.original_description}
                     </div>
                   )}
@@ -425,7 +425,7 @@ export default function CsvImport({ open, onClose, onImport, categories }: Props
                 </div>
                 <select
                   className="rounded border bg-transparent px-1 py-0.5 text-[11px] outline-none"
-                  style={{ borderColor: '#1E293B', color: '#94A3B8' }}
+                  style={{ borderColor: '#1E293B', color: 'var(--text-secondary)' }}
                   value={row.category_id || ''}
                   onChange={(e) => updateReviewRow(i, 'category_id', e.target.value)}
                 >
@@ -443,7 +443,7 @@ export default function CsvImport({ open, onClose, onImport, categories }: Props
             ))}
           </div>
 
-          <div className="mb-3 flex gap-4 text-[10px]" style={{ color: '#475569' }}>
+          <div className="mb-3 flex gap-4 text-[10px]" style={{ color: 'var(--text-disabled)' }}>
             <span className="flex items-center gap-1">
               <span className="inline-block h-2 w-2 rounded-full" style={{ background: '#34D399' }} /> High
             </span>
@@ -459,14 +459,14 @@ export default function CsvImport({ open, onClose, onImport, categories }: Props
             <button
               onClick={() => { setStep('upload'); setAiError(''); }}
               className="rounded-lg border px-4 py-2 text-sm font-semibold"
-              style={{ borderColor: '#1E293B', color: '#64748B', background: 'transparent', cursor: 'pointer' }}
+              style={{ borderColor: '#1E293B', color: 'var(--text-muted)', background: 'transparent', cursor: 'pointer' }}
             >
               Back
             </button>
             <button
               onClick={handleFinalImport}
               className="rounded-lg border-none px-5 py-2 text-sm font-semibold text-white"
-              style={{ background: 'linear-gradient(135deg, #3B82F6, #2563EB)', cursor: 'pointer' }}
+              style={{ background: 'var(--amber)', color: '#0A0A0B', cursor: 'pointer' }}
             >
               Import {reviewRows.length} Transactions
             </button>

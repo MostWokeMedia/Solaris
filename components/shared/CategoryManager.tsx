@@ -15,8 +15,8 @@ type Props = {
   transactionCounts: Record<string, number>;
 };
 
-const inputStyle = "w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition-colors focus:border-blue-500";
-const inputColors = { background: '#0A0E17', borderColor: '#1E293B', color: '#E2E8F0' };
+const inputStyle = "w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition-colors";
+const inputColors = { background: 'var(--bg)', borderColor: 'var(--border)', color: 'var(--text)' };
 
 export default function CategoryManager({
   open, onClose, categories, onAdd, onRename, onDelete, transactionCounts,
@@ -64,7 +64,7 @@ export default function CategoryManager({
       <div
         key={cat.id}
         className="flex items-center gap-2.5 rounded-md px-3 py-2 transition-colors hover:bg-[#1A2332]"
-        style={{ borderBottom: '1px solid #1E293B22' }}
+        style={{ borderBottom: '1px solid var(--border-subtle)' }}
       >
         <div className="h-2 w-2 shrink-0 rounded-sm" style={{ background: dotColor }} />
 
@@ -85,27 +85,27 @@ export default function CategoryManager({
           <span
             onClick={() => { setEditingId(cat.id); setEditName(cat.name); }}
             className="flex-1 cursor-pointer text-[13px]"
-            style={{ color: '#CBD5E1' }}
+            style={{ color: 'var(--text)' }}
           >
             {cat.name}
           </span>
         )}
 
-        <span className="text-[10px]" style={{ color: '#475569' }}>{count} txns</span>
+        <span className="text-[10px]" style={{ color: 'var(--text-disabled)' }}>{count} txns</span>
 
         {confirmDeleteId === cat.id ? (
           <div className="flex items-center gap-1">
             <button
               onClick={() => handleDelete(cat.id)}
               className="rounded border px-2 py-0.5 text-[10px] font-semibold"
-              style={{ borderColor: '#F8717133', color: '#F87171', background: 'transparent' }}
+              style={{ borderColor: '#F8717133', color: 'var(--red)', background: 'transparent' }}
             >
               Yes
             </button>
             <button
               onClick={() => setConfirmDeleteId(null)}
               className="rounded border px-2 py-0.5 text-[10px] font-semibold"
-              style={{ borderColor: '#1E293B', color: '#64748B', background: 'transparent' }}
+              style={{ borderColor: 'var(--border)', color: 'var(--text-muted)', background: 'transparent' }}
             >
               No
             </button>
@@ -115,14 +115,14 @@ export default function CategoryManager({
             <button
               onClick={() => { setEditingId(cat.id); setEditName(cat.name); }}
               className="border-none bg-transparent px-1.5 py-0.5 text-xs"
-              style={{ color: '#64748B', cursor: 'pointer' }}
+              style={{ color: 'var(--text-muted)', cursor: 'pointer' }}
             >
               &#x270E;
             </button>
             <button
               onClick={() => setConfirmDeleteId(cat.id)}
               className="border-none bg-transparent px-1.5 py-0.5 text-xs"
-              style={{ color: '#64748B', cursor: 'pointer' }}
+              style={{ color: 'var(--text-muted)', cursor: 'pointer' }}
             >
               &#x2715;
             </button>
@@ -157,7 +157,7 @@ export default function CategoryManager({
           onClick={handleAdd}
           className="whitespace-nowrap rounded-lg border-none px-4 py-2 text-sm font-semibold text-white"
           style={{
-            background: 'linear-gradient(135deg, #3B82F6, #2563EB)',
+            background: 'var(--amber)', color: '#0A0A0B',
             opacity: newName.trim() ? 1 : 0.4,
             cursor: 'pointer',
           }}
@@ -169,13 +169,13 @@ export default function CategoryManager({
       {/* Revenue */}
       <div
         className="mb-2 text-xs font-semibold uppercase"
-        style={{ color: '#34D399', letterSpacing: '0.5px' }}
+        style={{ color: 'var(--green)', letterSpacing: '0.5px' }}
       >
         Revenue Categories
       </div>
       <div className="mb-5">
         {revCats.length === 0 && (
-          <div className="py-3 text-center text-xs" style={{ color: '#475569' }}>No revenue categories</div>
+          <div className="py-3 text-center text-xs" style={{ color: 'var(--text-disabled)' }}>No revenue categories</div>
         )}
         {revCats.map(renderCategory)}
       </div>
@@ -183,18 +183,18 @@ export default function CategoryManager({
       {/* Expense */}
       <div
         className="mb-2 text-xs font-semibold uppercase"
-        style={{ color: '#F87171', letterSpacing: '0.5px' }}
+        style={{ color: 'var(--red)', letterSpacing: '0.5px' }}
       >
         Expense Categories
       </div>
       <div>
         {expCats.length === 0 && (
-          <div className="py-3 text-center text-xs" style={{ color: '#475569' }}>No expense categories</div>
+          <div className="py-3 text-center text-xs" style={{ color: 'var(--text-disabled)' }}>No expense categories</div>
         )}
         {expCats.map(renderCategory)}
       </div>
 
-      <p className="mt-4 text-[10px]" style={{ color: '#334155' }}>
+      <p className="mt-4 text-[10px]" style={{ color: 'var(--text-disabled)' }}>
         Click a name to rename &middot; Renaming updates all linked transactions automatically &middot; Deleting unlinks transactions
       </p>
     </Modal>
