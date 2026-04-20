@@ -306,7 +306,7 @@ export default function RecurringPage() {
         <div
           className="grid px-5 py-3 text-[11px] font-semibold uppercase tracking-wider"
           style={{
-            gridTemplateColumns: '2fr 0.9fr 0.9fr 0.8fr 1.1fr',
+            gridTemplateColumns: '2fr 0.9fr 0.9fr 0.8fr 1.1fr 1.2fr',
             background: 'var(--bg-elevated)',
             borderBottom: '1px solid var(--border)',
             color: 'var(--text-disabled)',
@@ -317,51 +317,57 @@ export default function RecurringPage() {
           <div className="text-center">Status</div>
           <div className="text-center">Due</div>
           <div>Paid From</div>
+          <div>Notes</div>
         </div>
 
-        {filtered.length === 0 && (
-          <div className="py-10 text-center text-sm" style={{ color: 'var(--text-disabled)' }}>
-            {bills.length === 0 ? 'No recurring bills yet. Add one to get started.' : 'No bills in this category.'}
-          </div>
-        )}
-
-        {filtered.map((bill) => (
-          <div
-            key={bill.id}
-            onClick={() => { setEditBill({ ...bill }); setConfirmDel(null); }}
-            className="grid cursor-pointer items-center px-5 py-3 transition-colors hover:bg-[var(--card-hover)]"
-            style={{
-              gridTemplateColumns: '2fr 0.9fr 0.9fr 0.8fr 1.1fr',
-              borderBottom: '1px solid var(--border-subtle)',
-            }}
-          >
-            <div>
-              <div className="text-sm font-medium" style={{ color: 'var(--text)' }}>{bill.name}</div>
-              <div className="mt-0.5 text-[11px]" style={{ color: 'var(--text-disabled)' }}>
-                {getCategoryName(bill)}{bill.note ? ` \u00B7 ${bill.note}` : ''}
-              </div>
+        <div style={{ maxHeight: 480, overflowY: 'auto' }}>
+          {filtered.length === 0 && (
+            <div className="py-10 text-center text-sm" style={{ color: 'var(--text-disabled)' }}>
+              {bills.length === 0 ? 'No recurring bills yet. Add one to get started.' : 'No bills in this category.'}
             </div>
+          )}
+
+          {filtered.map((bill) => (
             <div
-              className="text-right text-sm font-bold"
+              key={bill.id}
+              onClick={() => { setEditBill({ ...bill }); setConfirmDel(null); }}
+              className="grid cursor-pointer items-center px-5 py-3 transition-colors hover:bg-[var(--card-hover)]"
               style={{
-                fontFamily: "'Space Mono', monospace",
-                color: bill.status === 'good' ? '#E2E8F0' : '#64748B',
+                gridTemplateColumns: '2fr 0.9fr 0.9fr 0.8fr 1.1fr 1.2fr',
+                borderBottom: '1px solid var(--border-subtle)',
               }}
             >
-              ${Number(bill.amount).toLocaleString()}
+              <div>
+                <div className="text-sm font-medium" style={{ color: 'var(--text)' }}>{bill.name}</div>
+                <div className="mt-0.5 text-[11px]" style={{ color: 'var(--text-disabled)' }}>
+                  {getCategoryName(bill)}
+                </div>
+              </div>
+              <div
+                className="text-right text-sm font-bold"
+                style={{
+                  fontFamily: "'Space Mono', monospace",
+                  color: bill.status === 'good' ? '#E2E8F0' : '#64748B',
+                }}
+              >
+                ${Number(bill.amount).toLocaleString()}
+              </div>
+              <div
+                className="text-center"
+                onClick={(e) => { e.stopPropagation(); cycleStatus(bill.id, bill.status); }}
+              >
+                <StatusBadge status={bill.status} onClick={() => {}} />
+              </div>
+              <div className="text-center text-[13px]" style={{ color: 'var(--text-secondary)' }}>
+                {formatDate(bill.due_date)}
+              </div>
+              <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{bill.paid_from}</div>
+              <div className="truncate text-[11px]" style={{ color: 'var(--text-disabled)' }} title={bill.note || ''}>
+                {bill.note || '\u2014'}
+              </div>
             </div>
-            <div
-              className="text-center"
-              onClick={(e) => { e.stopPropagation(); cycleStatus(bill.id, bill.status); }}
-            >
-              <StatusBadge status={bill.status} onClick={() => {}} />
-            </div>
-            <div className="text-center text-[13px]" style={{ color: 'var(--text-secondary)' }}>
-              {formatDate(bill.due_date)}
-            </div>
-            <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{bill.paid_from}</div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
 
       {/* Credit Card Strategy */}
