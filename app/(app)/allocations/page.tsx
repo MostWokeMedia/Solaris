@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 import Modal from '@/components/shared/Modal';
 import Field from '@/components/shared/Field';
 import { formatMoney } from '@/lib/utils/money';
-import type { AllocationAccount, AllocationPeriod, CreditCard, CreditCardCheck } from '@/types';
+import type { AllocationAccount, AllocationPeriod, CreditCard, CreditCardCheck, Category } from '@/types';
 
 const MN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const PERIODS: { key: string; label: string; month: number; half: number; qEnd: boolean }[] = [];
@@ -26,6 +26,7 @@ export default function AllocationsPage() {
   const [periods, setPeriods] = useState<Record<string, AllocationPeriod>>({});
   const [cards, setCards] = useState<CreditCard[]>([]);
   const [cardChecks, setCardChecks] = useState<Record<string, boolean>>({});
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [year] = useState(2026);
 
@@ -33,19 +34,21 @@ export default function AllocationsPage() {
   const [showAcctMgr, setShowAcctMgr] = useState(false);
   const [showCardMgr, setShowCardMgr] = useState(false);
   const [editAcct, setEditAcct] = useState<AllocationAccount | null>(null);
-  const [newAcct, setNewAcct] = useState({ name: '', pct: '', tag: '' });
+  const [newAcct, setNewAcct] = useState({ name: '', pct: '', tag: '', category_id: '' });
   const [newCard, setNewCard] = useState('');
   const [confirmDel, setConfirmDel] = useState<string | null>(null);
   const [inlineEdit, setInlineEdit] = useState<{ id: string; field: 'pct' | 'name' } | null>(null);
 
   const loadData = useCallback(async () => {
-    const [{ data: acctData }, { data: periodData }, { data: cardData }, { data: checkData }] = await Promise.all([
+    const [{ data: acctData }, { data: periodData }, { data: cardData }, { data: checkData }, { data: catData }] = await Promise.all([
       supabase.from('allocation_accounts').select('*').order('sort_order'),
       supabase.from('allocation_periods').select('*').eq('year', year),
       supabase.from('credit_cards').select('*').order('created_at'),
       supabase.from('credit_card_checks').select('*').eq('year', year),
+      supabase.from('categories').select('*').eq('type', 'expense').order('name'),
     ]);
     setAccounts(acctData || []);
+    setCategories(catData || []);
     const pMap: Record<string, AllocationPeriod> = {};
     (periodData || []).forEach((p: AllocationPeriod) => { pMap[p.period_key] = p; });
     setPeriods(pMap);
@@ -162,9 +165,10 @@ export default function AllocationsPage() {
       user_id: user.id, name: newAcct.name,
       percentage: parseFloat(newAcct.pct) || 0,
       tag: newAcct.tag || null,
+      category_id: newAcct.category_id || null,
       sort_order: accounts.length,
     });
-    setNewAcct({ name: '', pct: '', tag: '' });
+    setNewAcct({ name: '', pct: '', tag: '', category_id: '' });
     loadData();
   }
 
@@ -172,6 +176,7 @@ export default function AllocationsPage() {
     if (!editAcct) return;
     await supabase.from('allocation_accounts').update({
       name: editAcct.name, percentage: Number(editAcct.percentage), tag: editAcct.tag,
+      category_id: editAcct.category_id || null,
     }).eq('id', editAcct.id);
     setEditAcct(null);
     loadData();
@@ -589,6 +594,11 @@ export default function AllocationsPage() {
             <option value="profit">Profit</option>
             <option value="tax">Tax</option>
           </select>
+          <select className={inputStyle + ' w-auto min-w-[100px]'} style={{ ...inputColors, cursor: 'pointer' }}
+            value={newAcct.category_id} onChange={(e) => setNewAcct({ ...newAcct, category_id: e.target.value })}>
+            <option value="">No category</option>
+            {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
           <button onClick={handleAddAcct}
             className="rounded-lg border-none px-4 py-2 text-sm font-semibold text-white"
             style={{ background: 'var(--amber)', color: '#0A0A0B', cursor: 'pointer', opacity: newAcct.name.trim() ? 1 : 0.4 }}>
@@ -605,7 +615,7 @@ export default function AllocationsPage() {
           if (editAcct?.id === acct.id) {
             return (
               <div key={acct.id} className="border-b py-2.5" style={{ borderColor: '#1E293B22' }}>
-                <div className="mb-2 grid grid-cols-[1fr_70px_90px] gap-2">
+                <div className="mb-2 grid grid-cols-[1fr_70px_90px_1fr] gap-2">
                   <input className={inputStyle} style={inputColors} value={editAcct.name}
                     onChange={(e) => setEditAcct({ ...editAcct, name: e.target.value })} />
                   <input className={inputStyle} style={inputColors} type="number" step="0.1" value={editAcct.percentage}
@@ -615,6 +625,11 @@ export default function AllocationsPage() {
                     <option value="">No tag</option>
                     <option value="profit">Profit</option>
                     <option value="tax">Tax</option>
+                  </select>
+                  <select className={inputStyle} style={{ ...inputColors, cursor: 'pointer' }} value={editAcct.category_id || ''}
+                    onChange={(e) => setEditAcct({ ...editAcct, category_id: e.target.value || null })}>
+                    <option value="">No category</option>
+                    {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
                 </div>
                 <div className="flex justify-end gap-2">
@@ -634,7 +649,14 @@ export default function AllocationsPage() {
               <span className="min-w-[45px] text-right text-xs" style={{ fontFamily: "'Space Mono', monospace", color: 'var(--text-muted)' }}>
                 {Number(acct.percentage) > 0 ? acct.percentage + '%' : '0%'}
               </span>
-              <span className="flex-1 text-[13px] font-medium" style={{ color: 'var(--text)' }}>{acct.name}</span>
+              <span className="flex-1 text-[13px] font-medium" style={{ color: 'var(--text)' }}>
+                {acct.name}
+                {acct.category_id && (
+                  <span className="ml-1.5 text-[10px]" style={{ color: 'var(--text-disabled)' }}>
+                    &rarr; {categories.find((c) => c.id === acct.category_id)?.name || ''}
+                  </span>
+                )}
+              </span>
               {acct.tag && (
                 <span className="rounded px-1.5 py-0.5 text-[8px] font-bold"
                   style={{ color: TAG_COLORS[acct.tag], background: TAG_COLORS[acct.tag] + '22' }}>
