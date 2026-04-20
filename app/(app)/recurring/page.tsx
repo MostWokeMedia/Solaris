@@ -337,12 +337,7 @@ export default function RecurringPage() {
                 borderBottom: '1px solid var(--border-subtle)',
               }}
             >
-              <div>
-                <div className="text-sm font-medium" style={{ color: 'var(--text)' }}>{bill.name}</div>
-                <div className="mt-0.5 text-[11px]" style={{ color: 'var(--text-disabled)' }}>
-                  {getCategoryName(bill)}
-                </div>
-              </div>
+              <div className="text-sm font-medium" style={{ color: 'var(--text)' }}>{bill.name}</div>
               <div
                 className="text-right text-sm font-bold"
                 style={{
