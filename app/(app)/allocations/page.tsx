@@ -126,14 +126,20 @@ export default function AllocationsPage() {
     if (!user) return;
     const numVal = parseFloat(value) || 0;
     const existing = periods[key];
-    if (existing) {
+    if (existing?.id) {
       await supabase.from('allocation_periods').update({ [field]: numVal }).eq('id', existing.id);
     } else {
-      await supabase.from('allocation_periods').insert({
-        user_id: user.id, period_key: key, year,
-        starting_amount: field === 'starting_amount' ? numVal : 0,
-        vault_draw: field === 'vault_draw' ? numVal : 0,
-      });
+      const { data } = await supabase.from('allocation_periods')
+        .select('id').eq('user_id', user.id).eq('period_key', key).eq('year', year).maybeSingle();
+      if (data) {
+        await supabase.from('allocation_periods').update({ [field]: numVal }).eq('id', data.id);
+      } else {
+        await supabase.from('allocation_periods').insert({
+          user_id: user.id, period_key: key, year,
+          starting_amount: field === 'starting_amount' ? numVal : 0,
+          vault_draw: field === 'vault_draw' ? numVal : 0,
+        });
+      }
     }
     loadData();
   }
