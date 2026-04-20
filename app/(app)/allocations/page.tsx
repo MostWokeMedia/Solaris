@@ -188,6 +188,19 @@ export default function AllocationsPage() {
     loadData();
   }
 
+  async function handleMoveAcct(id: string, direction: 'up' | 'down') {
+    const idx = accounts.findIndex((a) => a.id === id);
+    if (idx < 0) return;
+    const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= accounts.length) return;
+    const a = accounts[idx], b = accounts[swapIdx];
+    await Promise.all([
+      supabase.from('allocation_accounts').update({ sort_order: swapIdx }).eq('id', a.id),
+      supabase.from('allocation_accounts').update({ sort_order: idx }).eq('id', b.id),
+    ]);
+    loadData();
+  }
+
   async function handleToggleCard(cardId: string, periodKey: string) {
     const key = cardId + '-' + periodKey;
     const current = cardChecks[key] || false;
@@ -675,6 +688,10 @@ export default function AllocationsPage() {
                 </div>
               ) : (
                 <>
+                  <button onClick={() => handleMoveAcct(acct.id, 'up')} disabled={accounts.indexOf(acct) === 0}
+                    className="border-none bg-transparent px-1 py-0.5 text-xs" style={{ color: accounts.indexOf(acct) === 0 ? 'var(--text-disabled)' : 'var(--text-muted)', cursor: accounts.indexOf(acct) === 0 ? 'default' : 'pointer' }}>&uarr;</button>
+                  <button onClick={() => handleMoveAcct(acct.id, 'down')} disabled={accounts.indexOf(acct) === accounts.length - 1}
+                    className="border-none bg-transparent px-1 py-0.5 text-xs" style={{ color: accounts.indexOf(acct) === accounts.length - 1 ? 'var(--text-disabled)' : 'var(--text-muted)', cursor: accounts.indexOf(acct) === accounts.length - 1 ? 'default' : 'pointer' }}>&darr;</button>
                   <button onClick={() => setEditAcct({ ...acct })}
                     className="border-none bg-transparent px-1.5 py-0.5 text-xs" style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>&#x270E;</button>
                   <button onClick={() => setConfirmDel(acct.id)}
