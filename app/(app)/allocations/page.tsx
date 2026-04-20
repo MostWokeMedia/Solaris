@@ -5,6 +5,9 @@ import { createClient } from '@/lib/supabase/client';
 import Modal from '@/components/shared/Modal';
 import Field from '@/components/shared/Field';
 import { formatMoney } from '@/lib/utils/money';
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import type { AllocationAccount, AllocationPeriod, CreditCard, CreditCardCheck, Category } from '@/types';
 
 const MN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -19,6 +22,24 @@ const TAG_LABELS: Record<string, string> = { profit: 'PROFIT', tax: 'TAX' };
 
 const inputStyle = "w-full rounded-lg border px-3 py-2 text-sm outline-none transition-colors";
 const inputColors = { background: 'var(--bg)', borderColor: 'var(--border)', color: 'var(--text)' };
+
+function SortableAccountRow({ acct, children }: { acct: AllocationAccount; children: React.ReactNode }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: acct.id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    borderBottom: '1px solid var(--border-subtle)',
+  };
+  return (
+    <div ref={setNodeRef} style={style} className="flex items-center gap-2.5 rounded-md px-1 py-2.5 transition-colors hover:bg-[var(--card-hover)]">
+      <div {...attributes} {...listeners} className="flex cursor-grab items-center px-1" style={{ color: 'var(--text-disabled)', touchAction: 'none' }}>
+        ⠿
+      </div>
+      {children}
+    </div>
+  );
+}
 
 export default function AllocationsPage() {
   const supabase = createClient();
@@ -188,17 +209,19 @@ export default function AllocationsPage() {
     loadData();
   }
 
-  async function handleMoveAcct(id: string, direction: 'up' | 'down') {
-    const idx = accounts.findIndex((a) => a.id === id);
-    if (idx < 0) return;
-    const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
-    if (swapIdx < 0 || swapIdx >= accounts.length) return;
-    const a = accounts[idx], b = accounts[swapIdx];
-    await Promise.all([
-      supabase.from('allocation_accounts').update({ sort_order: swapIdx }).eq('id', a.id),
-      supabase.from('allocation_accounts').update({ sort_order: idx }).eq('id', b.id),
-    ]);
-    loadData();
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+
+  async function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIdx = accounts.findIndex((a) => a.id === active.id);
+    const newIdx = accounts.findIndex((a) => a.id === over.id);
+    if (oldIdx < 0 || newIdx < 0) return;
+    const reordered = arrayMove(accounts, oldIdx, newIdx);
+    setAccounts(reordered);
+    await Promise.all(reordered.map((a, i) =>
+      supabase.from('allocation_accounts').update({ sort_order: i }).eq('id', a.id)
+    ));
   }
 
   async function handleToggleCard(cardId: string, periodKey: string) {
@@ -624,83 +647,82 @@ export default function AllocationsPage() {
           {totalPct > 100 && ' \u2014 OVER 100%!'}
         </div>
 
-        {accounts.map((acct) => {
-          if (editAcct?.id === acct.id) {
-            return (
-              <div key={acct.id} className="border-b py-2.5" style={{ borderColor: '#1E293B22' }}>
-                <div className="mb-2 grid grid-cols-[1fr_70px_90px_1fr] gap-2">
-                  <input className={inputStyle} style={inputColors} value={editAcct.name}
-                    onChange={(e) => setEditAcct({ ...editAcct, name: e.target.value })} />
-                  <input className={inputStyle} style={inputColors} type="number" step="0.1" value={editAcct.percentage}
-                    onChange={(e) => setEditAcct({ ...editAcct, percentage: parseFloat(e.target.value) || 0 })} />
-                  <select className={inputStyle} style={{ ...inputColors, cursor: 'pointer' }} value={editAcct.tag || ''}
-                    onChange={(e) => setEditAcct({ ...editAcct, tag: (e.target.value || null) as 'profit' | 'tax' | null })}>
-                    <option value="">No tag</option>
-                    <option value="profit">Profit</option>
-                    <option value="tax">Tax</option>
-                  </select>
-                  <select className={inputStyle} style={{ ...inputColors, cursor: 'pointer' }} value={editAcct.category_id || ''}
-                    onChange={(e) => setEditAcct({ ...editAcct, category_id: e.target.value || null })}>
-                    <option value="">No category</option>
-                    {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
-                </div>
-                <div className="flex justify-end gap-2">
-                  <button onClick={() => setEditAcct(null)}
-                    className="rounded border px-3 py-1 text-[11px] font-semibold"
-                    style={{ borderColor: 'var(--border)', color: 'var(--text-muted)', background: 'transparent', cursor: 'pointer' }}>Cancel</button>
-                  <button onClick={handleSaveAcct}
-                    className="rounded border-none px-3 py-1 text-[11px] font-semibold text-white"
-                    style={{ background: 'var(--amber)', color: '#0A0A0B', cursor: 'pointer' }}>Save</button>
-                </div>
-              </div>
-            );
-          }
-          return (
-            <div key={acct.id} className="flex items-center gap-2.5 rounded-md px-1 py-2.5 transition-colors hover:bg-[var(--card-hover)]"
-              style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-              <span className="min-w-[45px] text-right text-xs" style={{ fontFamily: "'Space Mono', monospace", color: 'var(--text-muted)' }}>
-                {Number(acct.percentage) > 0 ? acct.percentage + '%' : '0%'}
-              </span>
-              <span className="flex-1 text-[13px] font-medium" style={{ color: 'var(--text)' }}>
-                {acct.name}
-                {acct.category_id && (
-                  <span className="ml-1.5 text-[10px]" style={{ color: 'var(--text-disabled)' }}>
-                    &rarr; {categories.find((c) => c.id === acct.category_id)?.name || ''}
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={accounts.map((a) => a.id)} strategy={verticalListSortingStrategy}>
+            {accounts.map((acct) => {
+              if (editAcct?.id === acct.id) {
+                return (
+                  <div key={acct.id} className="border-b py-2.5" style={{ borderColor: '#1E293B22' }}>
+                    <div className="mb-2 grid grid-cols-[1fr_70px_90px_1fr] gap-2">
+                      <input className={inputStyle} style={inputColors} value={editAcct.name}
+                        onChange={(e) => setEditAcct({ ...editAcct, name: e.target.value })} />
+                      <input className={inputStyle} style={inputColors} type="number" step="0.1" value={editAcct.percentage}
+                        onChange={(e) => setEditAcct({ ...editAcct, percentage: parseFloat(e.target.value) || 0 })} />
+                      <select className={inputStyle} style={{ ...inputColors, cursor: 'pointer' }} value={editAcct.tag || ''}
+                        onChange={(e) => setEditAcct({ ...editAcct, tag: (e.target.value || null) as 'profit' | 'tax' | null })}>
+                        <option value="">No tag</option>
+                        <option value="profit">Profit</option>
+                        <option value="tax">Tax</option>
+                      </select>
+                      <select className={inputStyle} style={{ ...inputColors, cursor: 'pointer' }} value={editAcct.category_id || ''}
+                        onChange={(e) => setEditAcct({ ...editAcct, category_id: e.target.value || null })}>
+                        <option value="">No category</option>
+                        {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                      </select>
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <button onClick={() => setEditAcct(null)}
+                        className="rounded border px-3 py-1 text-[11px] font-semibold"
+                        style={{ borderColor: 'var(--border)', color: 'var(--text-muted)', background: 'transparent', cursor: 'pointer' }}>Cancel</button>
+                      <button onClick={handleSaveAcct}
+                        className="rounded border-none px-3 py-1 text-[11px] font-semibold text-white"
+                        style={{ background: 'var(--amber)', color: '#0A0A0B', cursor: 'pointer' }}>Save</button>
+                    </div>
+                  </div>
+                );
+              }
+              return (
+                <SortableAccountRow key={acct.id} acct={acct}>
+                  <span className="min-w-[45px] text-right text-xs" style={{ fontFamily: "'Space Mono', monospace", color: 'var(--text-muted)' }}>
+                    {Number(acct.percentage) > 0 ? acct.percentage + '%' : '0%'}
                   </span>
-                )}
-              </span>
-              {acct.tag && (
-                <span className="rounded px-1.5 py-0.5 text-[8px] font-bold"
-                  style={{ color: TAG_COLORS[acct.tag], background: TAG_COLORS[acct.tag] + '22' }}>
-                  {TAG_LABELS[acct.tag]}
-                </span>
-              )}
-              {confirmDel === acct.id ? (
-                <div className="flex items-center gap-1">
-                  <span className="text-[10px]" style={{ color: 'var(--red)' }}>Delete?</span>
-                  <button onClick={() => handleDeleteAcct(acct.id)}
-                    className="rounded border px-2 py-0.5 text-[10px] font-semibold"
-                    style={{ borderColor: '#F8717133', color: 'var(--red)', background: 'transparent', cursor: 'pointer' }}>Yes</button>
-                  <button onClick={() => setConfirmDel(null)}
-                    className="rounded border px-2 py-0.5 text-[10px] font-semibold"
-                    style={{ borderColor: 'var(--border)', color: 'var(--text-muted)', background: 'transparent', cursor: 'pointer' }}>No</button>
-                </div>
-              ) : (
-                <>
-                  <button onClick={() => handleMoveAcct(acct.id, 'up')} disabled={accounts.indexOf(acct) === 0}
-                    className="border-none bg-transparent px-1 py-0.5 text-xs" style={{ color: accounts.indexOf(acct) === 0 ? 'var(--text-disabled)' : 'var(--text-muted)', cursor: accounts.indexOf(acct) === 0 ? 'default' : 'pointer' }}>&uarr;</button>
-                  <button onClick={() => handleMoveAcct(acct.id, 'down')} disabled={accounts.indexOf(acct) === accounts.length - 1}
-                    className="border-none bg-transparent px-1 py-0.5 text-xs" style={{ color: accounts.indexOf(acct) === accounts.length - 1 ? 'var(--text-disabled)' : 'var(--text-muted)', cursor: accounts.indexOf(acct) === accounts.length - 1 ? 'default' : 'pointer' }}>&darr;</button>
-                  <button onClick={() => setEditAcct({ ...acct })}
-                    className="border-none bg-transparent px-1.5 py-0.5 text-xs" style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>&#x270E;</button>
-                  <button onClick={() => setConfirmDel(acct.id)}
-                    className="border-none bg-transparent px-1.5 py-0.5 text-xs" style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>&#x2715;</button>
-                </>
-              )}
-            </div>
-          );
-        })}
+                  <span className="flex-1 text-[13px] font-medium" style={{ color: 'var(--text)' }}>
+                    {acct.name}
+                    {acct.category_id && (
+                      <span className="ml-1.5 text-[10px]" style={{ color: 'var(--text-disabled)' }}>
+                        &rarr; {categories.find((c) => c.id === acct.category_id)?.name || ''}
+                      </span>
+                    )}
+                  </span>
+                  {acct.tag && (
+                    <span className="rounded px-1.5 py-0.5 text-[8px] font-bold"
+                      style={{ color: TAG_COLORS[acct.tag], background: TAG_COLORS[acct.tag] + '22' }}>
+                      {TAG_LABELS[acct.tag]}
+                    </span>
+                  )}
+                  {confirmDel === acct.id ? (
+                    <div className="flex items-center gap-1">
+                      <span className="text-[10px]" style={{ color: 'var(--red)' }}>Delete?</span>
+                      <button onClick={() => handleDeleteAcct(acct.id)}
+                        className="rounded border px-2 py-0.5 text-[10px] font-semibold"
+                        style={{ borderColor: '#F8717133', color: 'var(--red)', background: 'transparent', cursor: 'pointer' }}>Yes</button>
+                      <button onClick={() => setConfirmDel(null)}
+                        className="rounded border px-2 py-0.5 text-[10px] font-semibold"
+                        style={{ borderColor: 'var(--border)', color: 'var(--text-muted)', background: 'transparent', cursor: 'pointer' }}>No</button>
+                    </div>
+                  ) : (
+                    <>
+                      <button onClick={() => setEditAcct({ ...acct })}
+                        className="border-none bg-transparent px-1.5 py-0.5 text-xs" style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>&#x270E;</button>
+                      <button onClick={() => setConfirmDel(acct.id)}
+                        className="border-none bg-transparent px-1.5 py-0.5 text-xs" style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>&#x2715;</button>
+                    </>
+                  )}
+                </SortableAccountRow>
+              );
+            })}
+          </SortableContext>
+        </DndContext>
       </Modal>
 
       {/* Card Manager Modal */}
