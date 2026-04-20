@@ -35,6 +35,7 @@ export default function DashboardPage() {
   const [allocationAccounts, setAllocationAccounts] = useState<AllocationAccount[]>([]);
   const [allocationPeriods, setAllocationPeriods] = useState<AllocationPeriod[]>([]);
   const [loading, setLoading] = useState(true);
+  const [budgetMonth, setBudgetMonth] = useState<number | 'ytd'>('ytd');
 
   const loadData = useCallback(async () => {
     const [{ data: txns }, { data: cats }, { data: bills }, { data: accts }, { data: periods }] = await Promise.all([
@@ -107,18 +108,37 @@ export default function DashboardPage() {
   // === Budget vs Actual per Category ===
   const budgetVsActual = useMemo(() => {
     const expenseCategories = categories.filter((c) => c.type === 'expense');
-    const totalStarting = allocationPeriods.reduce((s, p) => s + Number(p.starting_amount), 0);
+
+    // Filter periods by selected month or use all for YTD
+    const filteredPeriods = budgetMonth === 'ytd'
+      ? allocationPeriods
+      : allocationPeriods.filter((p) => {
+          const m = parseInt(p.period_key.split('-')[0]);
+          return m === budgetMonth;
+        });
+    const periodStarting = filteredPeriods.reduce((s, p) => s + Number(p.starting_amount), 0);
+
+    // Filter transactions by month
+    const filteredTxns = budgetMonth === 'ytd'
+      ? transactions
+      : transactions.filter((t) => parseInt(t.date.split('-')[1]) - 1 === budgetMonth);
+
+    // Committed: monthly amount. For YTD multiply by months with data
+    const monthsWithData = budgetMonth === 'ytd'
+      ? new Set(transactions.map((t) => parseInt(t.date.split('-')[1]))).size || 1
+      : 1;
 
     return expenseCategories.map((cat) => {
       const account = allocationAccounts.find((a) => a.category_id === cat.id);
-      const allocated = account ? Math.round(totalStarting * (Number(account.percentage) / 100) * 100) / 100 : 0;
+      const allocated = account ? Math.round(periodStarting * (Number(account.percentage) / 100) * 100) / 100 : 0;
 
-      const committed = recurringBills
+      const monthlyCommitted = recurringBills
         .filter((b) => b.status === 'good' && b.category_id === cat.id)
         .reduce((s, b) => s + Number(b.amount), 0);
+      const committed = budgetMonth === 'ytd' ? monthlyCommitted * monthsWithData : monthlyCommitted;
 
       const actual = Math.abs(
-        transactions
+        filteredTxns
           .filter((t) => t.category_id === cat.id && Number(t.amount) < 0)
           .reduce((s, t) => s + Number(t.amount), 0)
       );
@@ -129,11 +149,11 @@ export default function DashboardPage() {
         allocated,
         committed,
         actual,
-        variance: allocated - actual,
+        variance: allocated > 0 ? allocated - actual : committed > 0 ? committed - actual : -actual,
       };
     }).filter((row) => row.allocated > 0 || row.committed > 0 || row.actual > 0)
       .sort((a, b) => b.actual - a.actual);
-  }, [categories, allocationAccounts, allocationPeriods, recurringBills, transactions]);
+  }, [categories, allocationAccounts, allocationPeriods, recurringBills, transactions, budgetMonth]);
 
   if (loading) return <DashboardSkeleton />;
 
@@ -209,16 +229,45 @@ export default function DashboardPage() {
 
       {/* Budget vs Actual */}
       <div className={panelClass} style={panelStyle}>
-        <h3 className={sectionHeadingClass} style={sectionHeadingStyle}>
-          Budget vs Actual
-        </h3>
-        <p className="mb-4 text-xs" style={{ color: 'var(--text-disabled)' }}>
-          Allocated (Profit First) vs Committed (Recurring Bills) vs Actual (Transactions)
-        </p>
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <h3 className={sectionHeadingClass} style={{ ...sectionHeadingStyle, marginBottom: 2 }}>
+              Budget vs Actual
+            </h3>
+            <p className="text-xs" style={{ color: 'var(--text-disabled)' }}>
+              {budgetMonth === 'ytd' ? 'Year to Date' : MONTHS[budgetMonth as number] + ' 2026'} &middot; Allocated (Profit First) vs Committed (Recurring) vs Actual (Transactions)
+            </p>
+          </div>
+          <div className="flex gap-1">
+            <button
+              onClick={() => setBudgetMonth('ytd')}
+              className="rounded-md px-2.5 py-1 text-[10px] font-semibold"
+              style={{
+                background: budgetMonth === 'ytd' ? 'var(--amber-soft)' : 'transparent',
+                color: budgetMonth === 'ytd' ? 'var(--amber-hover)' : 'var(--text-muted)',
+                border: budgetMonth === 'ytd' ? '1px solid var(--amber)' : '1px solid var(--border)',
+                cursor: 'pointer',
+              }}
+            >YTD</button>
+            {MONTHS.slice(0, new Date().getMonth() + 1).map((m, i) => (
+              <button
+                key={m}
+                onClick={() => setBudgetMonth(i)}
+                className="rounded-md px-2 py-1 text-[10px] font-semibold"
+                style={{
+                  background: budgetMonth === i ? 'var(--amber-soft)' : 'transparent',
+                  color: budgetMonth === i ? 'var(--amber-hover)' : 'var(--text-muted)',
+                  border: budgetMonth === i ? '1px solid var(--amber)' : '1px solid var(--border)',
+                  cursor: 'pointer',
+                }}
+              >{m}</button>
+            ))}
+          </div>
+        </div>
 
         {budgetVsActual.length === 0 ? (
           <div className="py-8 text-center text-sm" style={{ color: 'var(--text-disabled)' }}>
-            Link categories to allocation accounts and recurring bills to see the budget comparison.
+            No data for this period. Link categories to allocation accounts and recurring bills to see the budget comparison.
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -230,14 +279,12 @@ export default function DashboardPage() {
                   <th className="px-3 py-2 text-right text-[10px] font-semibold uppercase" style={{ color: 'var(--amber-warn)', borderBottom: '1px solid var(--border)' }}>Committed</th>
                   <th className="px-3 py-2 text-right text-[10px] font-semibold uppercase" style={{ color: 'var(--red)', borderBottom: '1px solid var(--border)' }}>Actual</th>
                   <th className="px-3 py-2 text-right text-[10px] font-semibold uppercase" style={{ color: 'var(--text-secondary)', borderBottom: '1px solid var(--border)' }}>Variance</th>
-                  <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase" style={{ color: 'var(--text-muted)', borderBottom: '1px solid var(--border)', minWidth: 120 }}>Status</th>
                 </tr>
               </thead>
               <tbody>
                 {budgetVsActual.map((row) => {
-                  const overBudget = row.allocated > 0 && row.actual > row.allocated;
-                  const overCommitted = row.allocated > 0 && row.committed > row.allocated;
-                  const pct = row.allocated > 0 ? Math.min((row.actual / row.allocated) * 100, 100) : 0;
+                  const benchmark = row.allocated > 0 ? row.allocated : row.committed;
+                  const overBudget = benchmark > 0 && row.actual > benchmark;
 
                   return (
                     <tr key={row.category} className="transition-colors hover:bg-[var(--card-hover)]">
@@ -250,32 +297,14 @@ export default function DashboardPage() {
                       <td className="px-3 py-2.5 text-right" style={{ fontFamily: "'Space Mono', monospace", color: 'var(--amber)', borderBottom: '1px solid var(--border-subtle)' }}>
                         {row.allocated > 0 ? formatMoney(row.allocated) : '\u2014'}
                       </td>
-                      <td className="px-3 py-2.5 text-right" style={{ fontFamily: "'Space Mono', monospace", color: overCommitted ? 'var(--red)' : 'var(--amber-warn)', borderBottom: '1px solid var(--border-subtle)' }}>
+                      <td className="px-3 py-2.5 text-right" style={{ fontFamily: "'Space Mono', monospace", color: 'var(--amber-warn)', borderBottom: '1px solid var(--border-subtle)' }}>
                         {row.committed > 0 ? formatMoney(row.committed) : '\u2014'}
                       </td>
                       <td className="px-3 py-2.5 text-right" style={{ fontFamily: "'Space Mono', monospace", color: overBudget ? 'var(--red)' : 'var(--text)', fontWeight: 700, borderBottom: '1px solid var(--border-subtle)' }}>
                         {row.actual > 0 ? formatMoney(row.actual) : '\u2014'}
                       </td>
                       <td className="px-3 py-2.5 text-right" style={{ fontFamily: "'Space Mono', monospace", color: row.variance >= 0 ? 'var(--green)' : 'var(--red)', fontWeight: 600, borderBottom: '1px solid var(--border-subtle)' }}>
-                        {row.allocated > 0 ? formatMoney(row.variance) : '\u2014'}
-                      </td>
-                      <td className="px-3 py-2.5" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                        {row.allocated > 0 && (
-                          <div className="flex items-center gap-2">
-                            <div className="h-1.5 flex-1 overflow-hidden rounded-full" style={{ background: 'var(--border)' }}>
-                              <div
-                                className="h-full rounded-full transition-all"
-                                style={{
-                                  width: pct + '%',
-                                  background: overBudget ? 'var(--red)' : pct > 80 ? 'var(--amber-warn)' : 'var(--green)',
-                                }}
-                              />
-                            </div>
-                            <span className="text-[10px] font-semibold" style={{ color: overBudget ? 'var(--red)' : 'var(--text-muted)', minWidth: 32, textAlign: 'right' }}>
-                              {Math.round(pct)}%
-                            </span>
-                          </div>
-                        )}
+                        {formatMoney(row.variance)}
                       </td>
                     </tr>
                   );
@@ -296,7 +325,6 @@ export default function DashboardPage() {
                   <td className="px-3 py-2.5 text-right font-bold" style={{ fontFamily: "'Space Mono', monospace", color: budgetVsActual.reduce((s, r) => s + r.variance, 0) >= 0 ? 'var(--green)' : 'var(--red)' }}>
                     {formatMoney(budgetVsActual.reduce((s, r) => s + r.variance, 0))}
                   </td>
-                  <td />
                 </tr>
               </tbody>
             </table>
