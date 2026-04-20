@@ -306,13 +306,14 @@ export default function RecurringPage() {
         <div
           className="grid px-5 py-3 text-[11px] font-semibold uppercase tracking-wider"
           style={{
-            gridTemplateColumns: '2fr 0.9fr 0.9fr 0.8fr 1.1fr 1.2fr',
+            gridTemplateColumns: '1.6fr 1.2fr 0.9fr 0.9fr 0.8fr 1.1fr 1.2fr',
             background: 'var(--bg-elevated)',
             borderBottom: '1px solid var(--border)',
             color: 'var(--text-disabled)',
           }}
         >
           <div>Name</div>
+          <div>Category</div>
           <div className="text-right">Amount</div>
           <div className="text-center">Status</div>
           <div className="text-center">Due</div>
@@ -333,11 +334,12 @@ export default function RecurringPage() {
               onClick={() => { setEditBill({ ...bill }); setConfirmDel(null); }}
               className="grid cursor-pointer items-center px-5 py-3 transition-colors hover:bg-[var(--card-hover)]"
               style={{
-                gridTemplateColumns: '2fr 0.9fr 0.9fr 0.8fr 1.1fr 1.2fr',
+                gridTemplateColumns: '1.6fr 1.2fr 0.9fr 0.9fr 0.8fr 1.1fr 1.2fr',
                 borderBottom: '1px solid var(--border-subtle)',
               }}
             >
               <div className="text-sm font-medium" style={{ color: 'var(--text)' }}>{bill.name}</div>
+              <div className="truncate text-xs" style={{ color: 'var(--text-muted)' }}>{getCategoryName(bill)}</div>
               <div
                 className="text-right text-sm font-bold"
                 style={{
