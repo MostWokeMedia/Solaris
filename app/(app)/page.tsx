@@ -162,57 +162,139 @@ export default function DashboardPage() {
   return (
     <div>
       {/* Header */}
-      <div className="mb-6">
-        <div className="eyebrow mb-1" style={{ color: 'var(--amber)' }}>// dashboard</div>
-        <h1 className="text-[22px] font-semibold" style={{ fontFamily: "'JetBrains Mono', monospace", color: 'var(--text)', letterSpacing: '-0.02em' }}>
-          Dashboard
-        </h1>
-        <p className="mt-1 text-[12.5px]" style={{ color: 'var(--text-disabled)' }}>Plan vs commitments vs reality</p>
+      <div className="mb-6 flex items-center justify-between" style={{
+        padding: '18px 0',
+        borderBottom: '1px solid var(--border)',
+        marginBottom: 24,
+        background: 'linear-gradient(180deg, var(--bg-elevated), transparent)',
+      }}>
+        <div>
+          <div className="flex items-baseline gap-3">
+            <h1 className="text-[22px] font-semibold" style={{ fontFamily: "'Space Grotesk', sans-serif", color: 'var(--text)', letterSpacing: '-0.02em' }}>
+              Dashboard
+            </h1>
+            <span className="eyebrow" style={{ color: 'var(--amber)' }}>// dashboard</span>
+          </div>
+          <p className="mt-1 text-[12.5px]" style={{ color: 'var(--text-disabled)' }}>Plan vs commitments vs reality</p>
+        </div>
+        <div className="flex items-center gap-2">
+          {/* Alerts button */}
+          <a href="/alerts" className="inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-[12px] font-medium transition-colors"
+            style={{ background: 'var(--panel-2)', border: '1px solid var(--border-strong)', color: 'var(--text-secondary)', textDecoration: 'none', cursor: 'pointer' }}>
+            <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+            </svg>
+            Alerts
+            <span className="inline-flex items-center justify-center rounded px-1.5 text-[9px] font-bold" style={{
+              background: 'var(--amber-soft)', color: 'var(--amber)', border: '1px solid oklch(0.85 0.15 200 / 0.3)',
+              minWidth: 18, height: 18,
+            }}>3</span>
+          </a>
+          {/* Ask AI button */}
+          <button onClick={() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }))}
+            className="inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-[12px] font-medium transition-colors"
+            style={{ background: 'oklch(0.85 0.15 200 / 0.08)', border: '1px solid oklch(0.85 0.15 200 / 0.4)', color: 'var(--amber)', cursor: 'pointer' }}>
+            <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+            </svg>
+            Ask
+            <span className="rounded px-1.5 py-0.5 text-[9px]" style={{ fontFamily: "'JetBrains Mono', monospace", color: 'var(--text-disabled)', border: '1px solid var(--border)', background: 'var(--panel-2)' }}>⌘K</span>
+          </button>
+          {/* Divider */}
+          <div style={{ width: 1, height: 20, background: 'var(--border-strong)', margin: '0 4px' }} />
+          {/* User chip */}
+          <div className="inline-flex items-center gap-2 rounded-full px-2 py-1" style={{ border: '1px solid var(--border-strong)', background: 'var(--panel-2)' }}>
+            <div className="flex items-center justify-center rounded-full text-[11px] font-bold" style={{
+              width: 24, height: 24,
+              background: 'linear-gradient(135deg, oklch(0.72 0.22 340), oklch(0.82 0.16 80))',
+              color: 'var(--bg)',
+            }}>S</div>
+            <span className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>mostwokemedia</span>
+          </div>
+        </div>
       </div>
 
       {/* Summary Cards */}
       <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-6">
-        <Card label="Revenue" value={formatMoney(totalRev)} accent={GREEN} />
-        <Card label="Expenses" value={formatMoney(Math.abs(totalExp))} accent={RED} />
-        <Card label="Net Income" value={formatMoney(netIncome)} accent={netIncome >= 0 ? GREEN : RED} sub={margin + '% margin'} />
-        <Card label="Committed" value={'$' + goodBillsTotal.toLocaleString()} accent={AMBER_WARN} sub={recurringBills.filter((b) => b.status === 'good').length + ' active bills'} />
-        <Card label="Vault" value={formatMoney(vaultTax.vault)} accent={GREEN} sub="Profit reserve" />
-        <Card label="Tax Reserve" value={formatMoney(vaultTax.tax)} accent={AMBER} sub="Set aside" />
+        <Card label="Revenue" value={formatMoney(totalRev)} accent={GREEN}
+          trend={{ value: margin + '%', positive: Number(margin) > 0 }} sub="YTD 2026" />
+        <Card label="Expenses" value={formatMoney(Math.abs(totalExp))} accent={RED}
+          sub="YTD 2026" />
+        <Card label="Net Income" value={formatMoney(netIncome)} accent={netIncome >= 0 ? CYAN : RED} sub={margin + '% margin'} />
+        <Card label="Committed" value={'$' + goodBillsTotal.toLocaleString()} accent={NEON_AMBER}
+          sub={recurringBills.filter((b) => b.status === 'good').length + ' active bills'}
+          icon={<svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>} />
+        <Card label="Vault" value={vaultTax.vault > 0 ? formatMoney(vaultTax.vault) : '\u2014'} accent="#a78bfa" sub="Profit reserve" />
+        <Card label="Tax Reserve" value={formatMoney(vaultTax.tax)} accent="oklch(0.72 0.22 340)"
+          sub="Set aside"
+          icon={<svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>} />
       </div>
 
       {/* Charts Row — 1.3fr / 1fr */}
       {activeMonthlyData.length > 0 && (
         <div className="mb-6 grid grid-cols-1 gap-4" style={{ gridTemplateColumns: '1.3fr 1fr' }}>
-          {/* Monthly Rev/Exp twin-bar chart */}
+          {/* Monthly Rev/Exp twin-bar chart — custom SVG */}
           <div className={panelClass + ' scanlines'} style={panelStyle}>
             <div className="mb-4 flex items-center justify-between">
               <div>
-                <div className="eyebrow" style={{ color: 'var(--amber)' }}>// monthly &middot; revenue vs expenses</div>
+                <div className="eyebrow" style={{ color: 'var(--text-disabled)' }}>MONTHLY &middot; REVENUE VS EXPENSES</div>
+                <p className="mt-0.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>Twin-bar rhythm</p>
               </div>
               <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1.5"><div className="h-2 w-2 rounded-sm" style={{ background: GREEN }} /><span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Rev</span></div>
-                <div className="flex items-center gap-1.5"><div className="h-2 w-2 rounded-sm" style={{ background: RED }} /><span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Exp</span></div>
+                <div className="flex items-center gap-1.5">
+                  <div className="h-2 w-2 rounded-sm" style={{ background: GREEN, boxShadow: `0 0 6px ${GREEN}` }} />
+                  <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Rev</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="h-2 w-2 rounded-sm" style={{ background: RED, boxShadow: `0 0 6px ${RED}` }} />
+                  <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Exp</span>
+                </div>
               </div>
             </div>
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={activeMonthlyData} barGap={4}>
-                <XAxis dataKey="month" tick={{ fill: '#8b91a3', fontSize: 10, fontFamily: 'JetBrains Mono' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: '#5d6274', fontSize: 10, fontFamily: 'JetBrains Mono' }} axisLine={false} tickLine={false} tickFormatter={(v) => formatMoneyShort(v)} />
-                <Tooltip contentStyle={tooltipStyle} formatter={(v) => formatMoney(Number(v))} />
-                <Bar dataKey="revenue" fill={GREEN} radius={[3, 3, 0, 0]} name="Revenue" />
-                <Bar dataKey="expenses" fill={RED} radius={[3, 3, 0, 0]} name="Expenses" />
-              </BarChart>
-            </ResponsiveContainer>
-            <div className="mt-3 flex flex-wrap justify-center gap-6">
-              {activeMonthlyData.map((d) => (
-                <div key={d.month} className="text-center">
-                  <div className="text-[10px] uppercase" style={{ fontFamily: "'JetBrains Mono', monospace", color: 'var(--text-muted)', letterSpacing: '0.1em' }}>{d.month}</div>
-                  <div className="text-xs font-semibold" style={{ fontFamily: "'JetBrains Mono', monospace", color: d.profit >= 0 ? GREEN : RED }}>
-                    {formatMoney(d.profit)}
+
+            {/* Custom SVG bars */}
+            {(() => {
+              const maxVal = Math.max(...activeMonthlyData.map(d => Math.max(d.revenue, d.expenses)), 1);
+              const barH = 180;
+              return (
+                <>
+                  <div className="flex items-end justify-around" style={{ height: barH, borderBottom: '1px solid var(--border)', padding: '0 22px 0 22px' }}>
+                    {activeMonthlyData.map((d) => {
+                      const revPct = (d.revenue / maxVal) * 100;
+                      const expPct = (d.expenses / maxVal) * 100;
+                      return (
+                        <div key={d.month} className="flex items-end gap-1">
+                          <div style={{
+                            width: 22, height: `${revPct}%`,
+                            background: `linear-gradient(180deg, ${GREEN}, oklch(0.82 0.18 155 / 0.3))`,
+                            boxShadow: `0 0 8px oklch(0.82 0.18 155 / 0.3)`,
+                            borderRadius: '3px 3px 0 0',
+                            minHeight: d.revenue > 0 ? 4 : 0,
+                          }} />
+                          <div style={{
+                            width: 22, height: `${expPct}%`,
+                            background: `linear-gradient(180deg, ${RED}, oklch(0.70 0.22 25 / 0.3))`,
+                            boxShadow: `0 0 8px oklch(0.70 0.22 25 / 0.3)`,
+                            borderRadius: '3px 3px 0 0',
+                            minHeight: d.expenses > 0 ? 4 : 0,
+                          }} />
+                        </div>
+                      );
+                    })}
                   </div>
-                </div>
-              ))}
-            </div>
+                  <div className="mt-3 flex justify-around" style={{ padding: '0 22px' }}>
+                    {activeMonthlyData.map((d) => (
+                      <div key={d.month} className="text-center">
+                        <div className="text-[10px] uppercase" style={{ fontFamily: "'JetBrains Mono', monospace", color: 'var(--text-muted)', letterSpacing: '0.1em' }}>{d.month}</div>
+                        <div className="text-[11px] font-semibold" style={{ fontFamily: "'JetBrains Mono', monospace", color: d.profit >= 0 ? GREEN : RED }}>
+                          {d.profit >= 0 ? '+' : ''}{formatMoney(d.profit)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              );
+            })()}
           </div>
 
           {/* Cash Flow Pulse */}
@@ -353,27 +435,36 @@ export default function DashboardPage() {
                       <td className="px-3 py-2.5 text-right" style={{ fontFamily: "'JetBrains Mono', monospace", color: overBudget ? 'var(--red)' : 'var(--text)', fontWeight: 700, borderBottom: '1px solid var(--border-subtle)' }}>
                         {row.actual > 0 ? formatMoney(row.actual) : '\u2014'}
                       </td>
-                      <td className="px-3 py-2.5" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                      <td className="px-3 py-2.5" style={{ borderBottom: '1px solid var(--border-subtle)', minWidth: 140 }}>
                         {benchmark > 0 && (
                           <div className="flex items-center gap-2">
-                            <div className="relative h-1.5 flex-1 overflow-hidden rounded-full" style={{ background: 'var(--border)' }}>
-                              <div className="absolute inset-y-0 left-0 rounded-full transition-all" style={{
+                            <div className="relative flex-1 rounded" style={{ height: 6, background: 'var(--border)' }}>
+                              <div className="absolute inset-y-0 left-0 rounded transition-all" style={{
                                 width: Math.min(100, pct) + '%',
                                 background: barColor,
-                                boxShadow: pct > 100 ? `0 0 8px ${RED}88` : pct > 80 ? `0 0 6px ${NEON_AMBER}66` : undefined,
+                                boxShadow: `0 0 ${pct > 100 ? 8 : 4}px ${barColor}88`,
                               }} />
+                              {pct > 100 && (
+                                <div className="absolute inset-y-0 rounded-r" style={{
+                                  left: '100%',
+                                  width: Math.min(50, pct - 100) + '%',
+                                  background: RED,
+                                  opacity: 0.4,
+                                  transform: 'translateX(-100%)',
+                                }} />
+                              )}
                             </div>
                             <span className="text-[10px] font-semibold" style={{
                               fontFamily: "'JetBrains Mono', monospace",
-                              color: pct > 100 ? RED : 'var(--text-muted)',
-                              minWidth: 32,
+                              color: pct > 100 ? RED : pct > 80 ? NEON_AMBER : 'var(--text-muted)',
+                              minWidth: 36,
                               textAlign: 'right',
                             }}>{Math.round(pct)}%</span>
                           </div>
                         )}
                       </td>
                       <td className="px-3 py-2.5 text-right" style={{ fontFamily: "'JetBrains Mono', monospace", color: row.variance >= 0 ? 'var(--green)' : 'var(--red)', fontWeight: 600, borderBottom: '1px solid var(--border-subtle)' }}>
-                        {formatMoney(row.variance)}
+                        {row.variance > 0 ? '+' : ''}{formatMoney(row.variance)}
                       </td>
                     </tr>
                   );

@@ -3,10 +3,12 @@ type CardProps = {
   value: string | number;
   accent: string;
   sub?: string;
+  trend?: { value: string; positive: boolean };
+  icon?: React.ReactNode;
   active?: boolean;
 };
 
-export default function Card({ label, value, accent, sub, active }: CardProps) {
+export default function Card({ label, value, accent, sub, trend, icon, active }: CardProps) {
   return (
     <div
       className="relative overflow-hidden rounded-xl border p-4 transition-all duration-150"
@@ -26,13 +28,14 @@ export default function Card({ label, value, accent, sub, active }: CardProps) {
         }}
       />
       <div
-        className="text-[10px] font-medium uppercase"
+        className="flex items-center gap-1.5 text-[10px] font-medium uppercase"
         style={{
           fontFamily: "'JetBrains Mono', monospace",
           color: 'var(--text-disabled)',
           letterSpacing: '0.14em',
         }}
       >
+        {icon}
         {label}
       </div>
       <div
@@ -45,8 +48,17 @@ export default function Card({ label, value, accent, sub, active }: CardProps) {
       >
         {value}
       </div>
-      {sub && (
-        <div className="mt-1.5 text-[11px]" style={{ color: 'var(--text-disabled)' }}>
+      {(sub || trend) && (
+        <div className="mt-1.5 flex items-center gap-1.5 text-[11px]" style={{ color: 'var(--text-disabled)' }}>
+          {trend && (
+            <span style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              color: trend.positive ? '#34D399' : '#F87171',
+              marginRight: 2,
+            }}>
+              {trend.positive ? '▲' : '▼'} {trend.value}
+            </span>
+          )}
           {sub}
         </div>
       )}
