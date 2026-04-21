@@ -2,26 +2,26 @@
 @import "tailwindcss";
 
 :root {
-  /* Surfaces — deep charcoal stack */
-  --bg:            #07080a;
-  --bg-elevated:   #0b0d12;
-  --card:          #0e1117;
-  --card-hover:    #171c28;
-  --border:        #1e2230;
-  --border-subtle: #1e2230;
-  --border-strong: #2a2f40;
+  /* Surfaces — OKLCH deep charcoal stack */
+  --bg:            oklch(0.12 0.01 240);
+  --bg-elevated:   oklch(0.15 0.015 240);
+  --card:          oklch(0.17 0.018 240);
+  --card-hover:    oklch(0.22 0.022 240);
+  --border:        oklch(0.25 0.015 240);
+  --border-subtle: oklch(0.25 0.015 240);
+  --border-strong: oklch(0.30 0.02 240);
 
   /* Extra surface tokens */
-  --panel-2:       #131722;
-  --elev:          #1a1f2e;
-  --line-3:        #3a4058;
+  --panel-2:       oklch(0.19 0.02 240);
+  --elev:          oklch(0.22 0.022 240);
+  --line-3:        oklch(0.40 0.025 240);
 
   /* Text */
-  --text:           #f3f4f8;
-  --text-secondary: #c8ccd8;
-  --text-muted:     #8b91a3;
-  --text-disabled:  #5d6274;
-  --text-ghost:     #3e4252;
+  --text:           oklch(0.94 0.01 240);
+  --text-secondary: oklch(0.82 0.01 240);
+  --text-muted:     oklch(0.68 0.01 240);
+  --text-disabled:  oklch(0.52 0.01 240);
+  --text-ghost:     oklch(0.38 0.01 240);
 
   /* Cyan (primary brand — "amber" token names kept for compat) */
   --amber:       oklch(0.85 0.15 200);
@@ -31,25 +31,38 @@
   --amber-glow:  0 0 0 1px oklch(0.85 0.15 200 / 0.2), 0 4px 20px -4px oklch(0.85 0.15 200 / 0.25);
 
   /* Neon accents */
-  --neon-cyan:    oklch(0.85 0.15 200);
-  --neon-magenta: oklch(0.72 0.22 340);
+  --cyan:         oklch(0.85 0.15 200);
+  --magenta:      oklch(0.72 0.22 340);
   --neon-amber:   oklch(0.82 0.16 80);
   --neon-green:   oklch(0.82 0.18 155);
-  --neon-red:     oklch(0.70 0.22 20);
-  --neon-violet:  oklch(0.72 0.18 290);
+  --neon-red:     oklch(0.70 0.22 25);
+  --violet:       oklch(0.70 0.20 295);
   --neon-blue:    oklch(0.75 0.18 245);
 
   /* Semantic — kept for charts, money, variance */
-  --green:      #34D399;
-  --red:        #F87171;
+  --green:      oklch(0.82 0.18 155);
+  --red:        oklch(0.70 0.22 25);
   --amber-warn: oklch(0.82 0.16 80);
 
   /* Tooltip */
-  --tooltip-bg:     #0e1117;
-  --tooltip-border: #2a2f40;
+  --tooltip-bg:     oklch(0.17 0.018 240);
+  --tooltip-border: oklch(0.30 0.02 240);
 
-  /* Glow intensity (0-1) */
-  --glow-k: 0.4;
+  /* Glow intensity (0-1, user-tweakable) */
+  --glow-k: 0.40;
+
+  /* Computed glow shadows */
+  --glow-cyan:    0 0 calc(var(--glow-k) * 20px) oklch(0.85 0.15 200 / 0.35);
+  --glow-magenta: 0 0 calc(var(--glow-k) * 20px) oklch(0.72 0.22 340 / 0.35);
+  --glow-amber:   0 0 calc(var(--glow-k) * 20px) oklch(0.82 0.16 80 / 0.35);
+  --glow-green:   0 0 calc(var(--glow-k) * 16px) oklch(0.82 0.18 155 / 0.30);
+  --glow-red:     0 0 calc(var(--glow-k) * 16px) oklch(0.70 0.22 25 / 0.30);
+
+  /* Radii */
+  --r-sm: 4px;
+  --r-md: 6px;
+  --r-lg: 8px;
+  --r-xl: 10px;
 }
 
 body {
@@ -132,12 +145,12 @@ input[type="number"] {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Glow utilities */
-.glow-cyan { box-shadow: 0 0 12px oklch(0.85 0.15 200 / 0.3), 0 0 1px oklch(0.85 0.15 200 / 0.6); }
-.glow-green { box-shadow: 0 0 12px oklch(0.82 0.18 155 / 0.3); }
-.glow-red { box-shadow: 0 0 10px oklch(0.70 0.22 20 / 0.25); }
-.glow-magenta { box-shadow: 0 0 12px oklch(0.72 0.22 340 / 0.3); }
-.glow-amber { box-shadow: 0 0 12px oklch(0.82 0.16 80 / 0.3), 0 0 1px oklch(0.82 0.16 80 / 0.6); }
+/* Glow utilities — driven by --glow-k */
+.glow-cyan { box-shadow: var(--glow-cyan); }
+.glow-green { box-shadow: var(--glow-green); }
+.glow-red { box-shadow: var(--glow-red); }
+.glow-magenta { box-shadow: var(--glow-magenta); }
+.glow-amber { box-shadow: var(--glow-amber); }
 
 /* Scanline texture */
 .scanlines { position: relative; }

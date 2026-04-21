@@ -163,10 +163,11 @@ export default function DashboardPage() {
     <div>
       {/* Header */}
       <div className="mb-6">
-        <h1 className="mb-1 text-2xl font-bold heading-gradient" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+        <div className="eyebrow mb-1" style={{ color: 'var(--amber)' }}>// dashboard</div>
+        <h1 className="text-[22px] font-semibold" style={{ fontFamily: "'JetBrains Mono', monospace", color: 'var(--text)', letterSpacing: '-0.02em' }}>
           Dashboard
         </h1>
-        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Plan vs Commitments vs Reality</p>
+        <p className="mt-1 text-[12.5px]" style={{ color: 'var(--text-disabled)' }}>Plan vs commitments vs reality</p>
       </div>
 
       {/* Summary Cards */}
@@ -179,51 +180,95 @@ export default function DashboardPage() {
         <Card label="Tax Reserve" value={formatMoney(vaultTax.tax)} accent={AMBER} sub="Set aside" />
       </div>
 
-      {/* Charts Row */}
+      {/* Charts Row — 1.3fr / 1fr */}
       {activeMonthlyData.length > 0 && (
-        <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
-          {/* Revenue vs Expenses */}
-          <div className={panelClass} style={panelStyle}>
-            <h3 className={sectionHeadingClass} style={sectionHeadingStyle}>
-              Monthly Revenue vs Expenses
-            </h3>
+        <div className="mb-6 grid grid-cols-1 gap-4" style={{ gridTemplateColumns: '1.3fr 1fr' }}>
+          {/* Monthly Rev/Exp twin-bar chart */}
+          <div className={panelClass + ' scanlines'} style={panelStyle}>
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <div className="eyebrow" style={{ color: 'var(--amber)' }}>// monthly &middot; revenue vs expenses</div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5"><div className="h-2 w-2 rounded-sm" style={{ background: GREEN }} /><span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Rev</span></div>
+                <div className="flex items-center gap-1.5"><div className="h-2 w-2 rounded-sm" style={{ background: RED }} /><span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Exp</span></div>
+              </div>
+            </div>
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={activeMonthlyData} barGap={4}>
-                <XAxis dataKey="month" tick={{ fill: '#6B6B72', fontSize: 11 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: '#6B6B72', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => formatMoneyShort(v)} />
+                <XAxis dataKey="month" tick={{ fill: '#8b91a3', fontSize: 10, fontFamily: 'JetBrains Mono' }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: '#5d6274', fontSize: 10, fontFamily: 'JetBrains Mono' }} axisLine={false} tickLine={false} tickFormatter={(v) => formatMoneyShort(v)} />
                 <Tooltip contentStyle={tooltipStyle} formatter={(v) => formatMoney(Number(v))} />
-                <Bar dataKey="revenue" fill={GREEN} radius={[4, 4, 0, 0]} name="Revenue" />
-                <Bar dataKey="expenses" fill={RED} radius={[4, 4, 0, 0]} name="Expenses" />
+                <Bar dataKey="revenue" fill={GREEN} radius={[3, 3, 0, 0]} name="Revenue" />
+                <Bar dataKey="expenses" fill={RED} radius={[3, 3, 0, 0]} name="Expenses" />
               </BarChart>
             </ResponsiveContainer>
-          </div>
-
-          {/* Profit/Loss */}
-          <div className={panelClass} style={panelStyle}>
-            <h3 className={sectionHeadingClass} style={sectionHeadingStyle}>
-              Monthly Profit / Loss
-            </h3>
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={activeMonthlyData}>
-                <XAxis dataKey="month" tick={{ fill: '#6B6B72', fontSize: 11 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: '#6B6B72', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => formatMoneyShort(v)} />
-                <Tooltip contentStyle={tooltipStyle} formatter={(v) => formatMoney(Number(v))} />
-                <Bar dataKey="profit" radius={[4, 4, 0, 0]} name="Profit/Loss">
-                  {activeMonthlyData.map((d, i) => (
-                    <Cell key={i} fill={d.profit >= 0 ? GREEN : RED} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-            <div className="mt-2 flex flex-wrap justify-center gap-4">
+            <div className="mt-3 flex flex-wrap justify-center gap-6">
               {activeMonthlyData.map((d) => (
                 <div key={d.month} className="text-center">
-                  <div className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{d.month}</div>
-                  <div className="text-xs font-bold" style={{ fontFamily: "'JetBrains Mono', monospace", color: d.profit >= 0 ? GREEN : RED }}>
+                  <div className="text-[10px] uppercase" style={{ fontFamily: "'JetBrains Mono', monospace", color: 'var(--text-muted)', letterSpacing: '0.1em' }}>{d.month}</div>
+                  <div className="text-xs font-semibold" style={{ fontFamily: "'JetBrains Mono', monospace", color: d.profit >= 0 ? GREEN : RED }}>
                     {formatMoney(d.profit)}
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+
+          {/* Cash Flow Pulse */}
+          <div className={panelClass} style={panelStyle}>
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <div className="eyebrow" style={{ color: 'var(--amber)' }}>// cash flow &middot; pulse</div>
+                <p className="mt-1 text-[11px]" style={{ color: 'var(--text-disabled)' }}>30-day velocity</p>
+              </div>
+              <span className="inline-flex items-center gap-1.5 rounded px-2 py-0.5 text-[10px] font-semibold uppercase" style={{
+                color: 'var(--amber)',
+                background: 'var(--amber-soft)',
+                border: '1px solid oklch(0.85 0.15 200 / 0.3)',
+                letterSpacing: '0.04em',
+              }}>
+                <span className="h-1.5 w-1.5 rounded-full" style={{ background: 'var(--amber)', boxShadow: '0 0 6px var(--amber)' }} />
+                LIVE
+              </span>
+            </div>
+            <div className="text-[34px] font-semibold" style={{ fontFamily: "'JetBrains Mono', monospace", color: netIncome >= 0 ? CYAN : RED, letterSpacing: '-0.02em' }}>
+              {netIncome >= 0 ? '+' : ''}{formatMoney(netIncome)}
+            </div>
+            <div className="mt-1 text-[11.5px]" style={{ color: 'var(--text-disabled)' }}>net after allocations & bills</div>
+
+            {/* Sparkline SVG */}
+            <svg viewBox="0 0 300 96" className="mt-4 w-full" style={{ height: 96 }}>
+              <defs>
+                <linearGradient id="cyanGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={CYAN} stopOpacity={0.4} />
+                  <stop offset="100%" stopColor={CYAN} stopOpacity={0} />
+                </linearGradient>
+                <filter id="sparkGlow">
+                  <feGaussianBlur stdDeviation="3" result="blur" />
+                  <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                </filter>
+              </defs>
+              <path d="M0 70 Q 30 40 60 52 T 120 35 T 180 60 T 240 25 T 300 30" fill="none" stroke={CYAN} strokeWidth={2} filter="url(#sparkGlow)" />
+              <path d="M0 70 Q 30 40 60 52 T 120 35 T 180 60 T 240 25 T 300 30 V 96 H 0 Z" fill="url(#cyanGrad)" />
+            </svg>
+
+            {/* Summary stats */}
+            <div className="mt-3 grid grid-cols-3 border-t pt-3" style={{ borderColor: 'var(--border)' }}>
+              <div>
+                <div className="text-[10px]" style={{ color: 'var(--text-disabled)' }}>In</div>
+                <div className="text-xs font-semibold" style={{ fontFamily: "'JetBrains Mono', monospace", color: GREEN }}>{formatMoneyShort(totalRev)}</div>
+              </div>
+              <div>
+                <div className="text-[10px]" style={{ color: 'var(--text-disabled)' }}>Out</div>
+                <div className="text-xs font-semibold" style={{ fontFamily: "'JetBrains Mono', monospace", color: RED }}>{formatMoneyShort(Math.abs(totalExp))}</div>
+              </div>
+              <div>
+                <div className="text-[10px]" style={{ color: 'var(--text-disabled)' }}>Avg/day</div>
+                <div className="text-xs font-semibold" style={{ fontFamily: "'JetBrains Mono', monospace", color: 'var(--text-secondary)' }}>
+                  {formatMoney(Math.abs(totalExp) / Math.max(1, new Set(transactions.map(t => t.date.slice(0,7))).size * 30))}
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -280,6 +325,7 @@ export default function DashboardPage() {
                   <th className="px-3 py-2 text-right text-[10px] font-semibold uppercase" style={{ color: 'var(--amber)', borderBottom: '1px solid var(--border)' }}>Allocated</th>
                   <th className="px-3 py-2 text-right text-[10px] font-semibold uppercase" style={{ color: 'var(--amber-warn)', borderBottom: '1px solid var(--border)' }}>Committed</th>
                   <th className="px-3 py-2 text-right text-[10px] font-semibold uppercase" style={{ color: 'var(--red)', borderBottom: '1px solid var(--border)' }}>Actual</th>
+                  <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase" style={{ color: 'var(--text-muted)', borderBottom: '1px solid var(--border)', minWidth: 140 }}>Burn</th>
                   <th className="px-3 py-2 text-right text-[10px] font-semibold uppercase" style={{ color: 'var(--text-secondary)', borderBottom: '1px solid var(--border)' }}>Variance</th>
                 </tr>
               </thead>
@@ -287,12 +333,14 @@ export default function DashboardPage() {
                 {budgetVsActual.map((row) => {
                   const benchmark = row.allocated > 0 ? row.allocated : row.committed;
                   const overBudget = benchmark > 0 && row.actual > benchmark;
+                  const pct = benchmark > 0 ? (row.actual / benchmark) * 100 : 0;
+                  const barColor = pct > 100 ? RED : pct > 80 ? NEON_AMBER : GREEN;
 
                   return (
                     <tr key={row.category} className="transition-colors hover:bg-[var(--card-hover)]">
                       <td className="px-3 py-2.5" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
                         <div className="flex items-center gap-2">
-                          <div className="h-2 w-2 rounded-sm" style={{ background: row.color }} />
+                          <div style={{ width: 3, height: 14, borderRadius: 1, background: row.color, boxShadow: `0 0 6px ${row.color}` }} />
                           <span className="font-medium" style={{ color: 'var(--text)' }}>{row.category}</span>
                         </div>
                       </td>
@@ -304,6 +352,25 @@ export default function DashboardPage() {
                       </td>
                       <td className="px-3 py-2.5 text-right" style={{ fontFamily: "'JetBrains Mono', monospace", color: overBudget ? 'var(--red)' : 'var(--text)', fontWeight: 700, borderBottom: '1px solid var(--border-subtle)' }}>
                         {row.actual > 0 ? formatMoney(row.actual) : '\u2014'}
+                      </td>
+                      <td className="px-3 py-2.5" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                        {benchmark > 0 && (
+                          <div className="flex items-center gap-2">
+                            <div className="relative h-1.5 flex-1 overflow-hidden rounded-full" style={{ background: 'var(--border)' }}>
+                              <div className="absolute inset-y-0 left-0 rounded-full transition-all" style={{
+                                width: Math.min(100, pct) + '%',
+                                background: barColor,
+                                boxShadow: pct > 100 ? `0 0 8px ${RED}88` : pct > 80 ? `0 0 6px ${NEON_AMBER}66` : undefined,
+                              }} />
+                            </div>
+                            <span className="text-[10px] font-semibold" style={{
+                              fontFamily: "'JetBrains Mono', monospace",
+                              color: pct > 100 ? RED : 'var(--text-muted)',
+                              minWidth: 32,
+                              textAlign: 'right',
+                            }}>{Math.round(pct)}%</span>
+                          </div>
+                        )}
                       </td>
                       <td className="px-3 py-2.5 text-right" style={{ fontFamily: "'JetBrains Mono', monospace", color: row.variance >= 0 ? 'var(--green)' : 'var(--red)', fontWeight: 600, borderBottom: '1px solid var(--border-subtle)' }}>
                         {formatMoney(row.variance)}
@@ -324,6 +391,7 @@ export default function DashboardPage() {
                   <td className="px-3 py-2.5 text-right font-bold" style={{ fontFamily: "'JetBrains Mono', monospace", color: 'var(--red)' }}>
                     {formatMoney(budgetVsActual.reduce((s, r) => s + r.actual, 0))}
                   </td>
+                  <td />
                   <td className="px-3 py-2.5 text-right font-bold" style={{ fontFamily: "'JetBrains Mono', monospace", color: budgetVsActual.reduce((s, r) => s + r.variance, 0) >= 0 ? 'var(--green)' : 'var(--red)' }}>
                     {formatMoney(budgetVsActual.reduce((s, r) => s + r.variance, 0))}
                   </td>
@@ -427,6 +495,58 @@ export default function DashboardPage() {
               <div className="py-4 text-center text-xs" style={{ color: 'var(--text-disabled)' }}>No allocation accounts set up yet.</div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* Recent Transactions */}
+      {transactions.length > 0 && (
+        <div className={panelClass + ' mt-6'} style={panelStyle}>
+          <div className="mb-4 flex items-center justify-between">
+            <div className="eyebrow" style={{ color: 'var(--amber)' }}>// recent transactions</div>
+            <a href="/transactions" className="text-[11px] font-medium" style={{ color: 'var(--amber)', textDecoration: 'none' }}>View all &rarr;</a>
+          </div>
+          <table className="w-full" style={{ borderCollapse: 'collapse' }}>
+            <thead>
+              <tr>
+                <th className="px-3 py-2 text-left text-[10px] font-medium uppercase" style={{ fontFamily: "'JetBrains Mono', monospace", color: 'var(--text-disabled)', borderBottom: '1px solid var(--border)', letterSpacing: '0.1em' }}>Date</th>
+                <th className="px-3 py-2 text-left text-[10px] font-medium uppercase" style={{ fontFamily: "'JetBrains Mono', monospace", color: 'var(--text-disabled)', borderBottom: '1px solid var(--border)', letterSpacing: '0.1em' }}>Description</th>
+                <th className="px-3 py-2 text-right text-[10px] font-medium uppercase" style={{ fontFamily: "'JetBrains Mono', monospace", color: 'var(--text-disabled)', borderBottom: '1px solid var(--border)', letterSpacing: '0.1em' }}>Amount</th>
+                <th className="px-3 py-2 text-left text-[10px] font-medium uppercase" style={{ fontFamily: "'JetBrains Mono', monospace", color: 'var(--text-disabled)', borderBottom: '1px solid var(--border)', letterSpacing: '0.1em' }}>Category</th>
+              </tr>
+            </thead>
+            <tbody>
+              {transactions.slice(0, 8).map((txn) => {
+                const amt = Number(txn.amount);
+                const catName = (txn.category as Category | undefined)?.name || 'Uncategorized';
+                return (
+                  <tr key={txn.id} className="transition-colors hover:bg-[var(--card-hover)]">
+                    <td className="px-3 py-2.5 text-[12px]" style={{ fontFamily: "'JetBrains Mono', monospace", color: 'var(--text-muted)', borderBottom: '1px solid var(--border-subtle)' }}>
+                      {txn.date.slice(5).replace('-', '/')}
+                    </td>
+                    <td className="px-3 py-2.5 text-[12.5px] font-medium" style={{ color: 'var(--text)', borderBottom: '1px solid var(--border-subtle)' }}>
+                      {txn.description}
+                    </td>
+                    <td className="px-3 py-2.5 text-right text-[12.5px] font-semibold" style={{
+                      fontFamily: "'JetBrains Mono', monospace",
+                      color: amt >= 0 ? GREEN : RED,
+                      borderBottom: '1px solid var(--border-subtle)',
+                    }}>
+                      {formatMoney(amt)}
+                    </td>
+                    <td className="px-3 py-2.5" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                      <span className="inline-flex items-center gap-1.5 rounded px-2 py-0.5 text-[10.5px]" style={{
+                        background: 'var(--panel-2)',
+                        color: 'var(--text-secondary)',
+                        border: '1px solid var(--border)',
+                      }}>
+                        {catName}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       )}
     </div>
