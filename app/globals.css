@@ -1,71 +1,119 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
 @import "tailwindcss";
 
 :root {
-  /* Surfaces */
-  --bg:            #0A0A0B;
-  --bg-elevated:   #111113;
-  --card:          #141416;
-  --card-hover:    #1A1A1D;
-  --border:        #26262B;
-  --border-subtle: #1E1E22;
-  --border-strong: #33333A;
+  /* Surfaces — deep charcoal stack */
+  --bg:            #07080a;
+  --bg-elevated:   #0b0d12;
+  --card:          #0e1117;
+  --card-hover:    #171c28;
+  --border:        #1e2230;
+  --border-subtle: #1e2230;
+  --border-strong: #2a2f40;
+
+  /* Extra surface tokens */
+  --panel-2:       #131722;
+  --elev:          #1a1f2e;
+  --line-3:        #3a4058;
 
   /* Text */
-  --text:           #F5F5F4;
-  --text-secondary: #A1A1A6;
-  --text-muted:     #6B6B72;
-  --text-disabled:  #44444A;
+  --text:           #f3f4f8;
+  --text-secondary: #c8ccd8;
+  --text-muted:     #8b91a3;
+  --text-disabled:  #5d6274;
+  --text-ghost:     #3e4252;
 
-  /* Amber (primary brand) */
-  --amber:       #F59E0B;
-  --amber-hover: #FBBF24;
-  --amber-dark:  #D97706;
-  --amber-soft:  #F59E0B1A;
-  --amber-glow:  0 0 0 1px #F59E0B33, 0 4px 16px -4px #F59E0B40;
+  /* Cyan (primary brand — "amber" token names kept for compat) */
+  --amber:       oklch(0.85 0.15 200);
+  --amber-hover: oklch(0.90 0.12 200);
+  --amber-dark:  oklch(0.75 0.18 205);
+  --amber-soft:  oklch(0.85 0.15 200 / 0.10);
+  --amber-glow:  0 0 0 1px oklch(0.85 0.15 200 / 0.2), 0 4px 20px -4px oklch(0.85 0.15 200 / 0.25);
+
+  /* Neon accents */
+  --neon-cyan:    oklch(0.85 0.15 200);
+  --neon-magenta: oklch(0.72 0.22 340);
+  --neon-amber:   oklch(0.82 0.16 80);
+  --neon-green:   oklch(0.82 0.18 155);
+  --neon-red:     oklch(0.70 0.22 20);
+  --neon-violet:  oklch(0.72 0.18 290);
+  --neon-blue:    oklch(0.75 0.18 245);
 
   /* Semantic — kept for charts, money, variance */
   --green:      #34D399;
   --red:        #F87171;
-  --amber-warn: #FBBF24;
+  --amber-warn: oklch(0.82 0.16 80);
 
   /* Tooltip */
-  --tooltip-bg:     #141416;
-  --tooltip-border: #33333A;
+  --tooltip-bg:     #0e1117;
+  --tooltip-border: #2a2f40;
+
+  /* Glow intensity (0-1) */
+  --glow-k: 0.4;
 }
 
 body {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Space Grotesk', sans-serif;
   background: var(--bg);
   color: var(--text);
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Heading gradient utility — amber to gold */
+/* Ambient background — subtle grid + radial glow */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    radial-gradient(ellipse 80% 60% at 15% 0%, oklch(0.75 0.18 245 / 0.04), transparent 60%),
+    radial-gradient(ellipse 60% 50% at 100% 100%, oklch(0.72 0.22 340 / 0.035), transparent 60%),
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 48px 48px, 48px 48px;
+  mask-image: radial-gradient(ellipse 120% 100% at 50% 0%, black 20%, transparent 90%);
+  opacity: 0.4;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Heading gradient utility — cyan */
 .heading-gradient {
-  background: linear-gradient(90deg, #F59E0B, #FBBF24);
+  background: linear-gradient(90deg, oklch(0.85 0.15 200), oklch(0.90 0.12 200));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
   -webkit-text-fill-color: transparent;
 }
 
+/* Mono utilities */
+.mono { font-family: 'JetBrains Mono', monospace; font-feature-settings: 'tnum' 1, 'zero' 1; }
+.num  { font-family: 'JetBrains Mono', monospace; font-feature-settings: 'tnum' 1, 'zero' 1; font-variant-numeric: tabular-nums; }
+.eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-disabled);
+  font-weight: 500;
+}
+
 /* Scrollbar styling */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--bg);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 3px;
+  background: var(--border-strong);
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--border-strong);
+  background: var(--line-3);
 }
 
 /* Number inputs - hide spinners */
@@ -82,6 +130,31 @@ input[type="number"] {
 /* Smooth transitions */
 * {
   -webkit-tap-highlight-color: transparent;
+}
+
+/* Glow utilities */
+.glow-cyan { box-shadow: 0 0 12px oklch(0.85 0.15 200 / 0.3), 0 0 1px oklch(0.85 0.15 200 / 0.6); }
+.glow-green { box-shadow: 0 0 12px oklch(0.82 0.18 155 / 0.3); }
+.glow-red { box-shadow: 0 0 10px oklch(0.70 0.22 20 / 0.25); }
+.glow-magenta { box-shadow: 0 0 12px oklch(0.72 0.22 340 / 0.3); }
+.glow-amber { box-shadow: 0 0 12px oklch(0.82 0.16 80 / 0.3), 0 0 1px oklch(0.82 0.16 80 / 0.6); }
+
+/* Scanline texture */
+.scanlines { position: relative; }
+.scanlines::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent 0,
+    transparent 2px,
+    oklch(1 0 0 / 0.012) 2px,
+    oklch(1 0 0 / 0.012) 3px
+  );
+  pointer-events: none;
+  border-radius: inherit;
+  z-index: 1;
 }
 
 /* Mobile: prevent horizontal overflow */

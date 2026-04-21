@@ -248,7 +248,7 @@ export default function RecurringPage() {
       {/* Header */}
       <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="mb-1 text-2xl font-bold heading-gradient" style={{ fontFamily: "'Space Mono', monospace" }}>
+          <h1 className="mb-1 text-2xl font-bold heading-gradient" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
             Recurring Bills
           </h1>
           <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
@@ -343,7 +343,7 @@ export default function RecurringPage() {
               <div
                 className="text-right text-sm font-bold"
                 style={{
-                  fontFamily: "'Space Mono', monospace",
+                  fontFamily: "'JetBrains Mono', monospace",
                   color: bill.status === 'good' ? '#E2E8F0' : '#64748B',
                 }}
               >
@@ -371,7 +371,7 @@ export default function RecurringPage() {
       <div className="mb-4 flex items-center justify-between">
         <h2
           className="text-lg font-bold"
-          style={{ fontFamily: "'Space Mono', monospace", color: 'var(--text-secondary)' }}
+          style={{ fontFamily: "'JetBrains Mono', monospace", color: 'var(--text-secondary)' }}
         >
           Credit Card Strategy
         </h2>
@@ -408,7 +408,7 @@ export default function RecurringPage() {
                   <div className="mt-0.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>{card.purpose}</div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="text-[13px] font-bold" style={{ fontFamily: "'Space Mono', monospace", color: card.color }}>
+                  <div className="text-[13px] font-bold" style={{ fontFamily: "'JetBrains Mono', monospace", color: card.color }}>
                     ${Number(card.credit_limit).toLocaleString()}
                   </div>
                   <button

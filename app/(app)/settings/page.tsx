@@ -187,7 +187,7 @@ export default function SettingsPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="mb-1 text-2xl font-bold" style={{ fontFamily: "'Space Mono', monospace" }}>
+        <h1 className="mb-1 text-2xl font-bold" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
           <span className="heading-gradient">Settings</span>
         </h1>
         <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Manage categories, view account info</p>
@@ -196,7 +196,7 @@ export default function SettingsPage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Account */}
         <div className="rounded-xl border p-5" style={{ background: 'var(--card)', borderColor: 'var(--border)' }}>
-          <h3 className="mb-4 text-sm font-semibold" style={{ fontFamily: "'Space Mono', monospace", color: 'var(--text-secondary)' }}>
+          <h3 className="mb-4 text-sm font-semibold" style={{ fontFamily: "'JetBrains Mono', monospace", color: 'var(--text-secondary)' }}>
             Account
           </h3>
           <div className="mb-3">
@@ -205,15 +205,15 @@ export default function SettingsPage() {
           </div>
           <div className="mt-4 grid grid-cols-3 gap-3">
             <div className="rounded-lg border p-3 text-center" style={{ borderColor: 'var(--border)' }}>
-              <div className="text-lg font-bold" style={{ fontFamily: "'Space Mono', monospace", color: 'var(--amber)' }}>{stats.txnCount}</div>
+              <div className="text-lg font-bold" style={{ fontFamily: "'JetBrains Mono', monospace", color: 'var(--amber)' }}>{stats.txnCount}</div>
               <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Transactions</div>
             </div>
             <div className="rounded-lg border p-3 text-center" style={{ borderColor: 'var(--border)' }}>
-              <div className="text-lg font-bold" style={{ fontFamily: "'Space Mono', monospace", color: 'var(--amber-warn)' }}>{stats.billCount}</div>
+              <div className="text-lg font-bold" style={{ fontFamily: "'JetBrains Mono', monospace", color: 'var(--amber-warn)' }}>{stats.billCount}</div>
               <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Recurring Bills</div>
             </div>
             <div className="rounded-lg border p-3 text-center" style={{ borderColor: 'var(--border)' }}>
-              <div className="text-lg font-bold" style={{ fontFamily: "'Space Mono', monospace", color: 'var(--green)' }}>{stats.acctCount}</div>
+              <div className="text-lg font-bold" style={{ fontFamily: "'JetBrains Mono', monospace", color: 'var(--green)' }}>{stats.acctCount}</div>
               <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Allocation Accts</div>
             </div>
           </div>
@@ -222,7 +222,7 @@ export default function SettingsPage() {
         {/* Categories */}
         <div className="rounded-xl border p-5" style={{ background: 'var(--card)', borderColor: 'var(--border)' }}>
           <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-sm font-semibold" style={{ fontFamily: "'Space Mono', monospace", color: 'var(--text-secondary)' }}>
+            <h3 className="text-sm font-semibold" style={{ fontFamily: "'JetBrains Mono', monospace", color: 'var(--text-secondary)' }}>
               Categories
             </h3>
             <button
@@ -272,7 +272,7 @@ export default function SettingsPage() {
         {/* Bank Connections */}
         <div className="rounded-xl border p-5" style={{ background: 'var(--card)', borderColor: 'var(--border)' }}>
           <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-sm font-semibold" style={{ fontFamily: "'Space Mono', monospace", color: 'var(--text-secondary)' }}>
+            <h3 className="text-sm font-semibold" style={{ fontFamily: "'JetBrains Mono', monospace", color: 'var(--text-secondary)' }}>
               Bank Connections
             </h3>
             <button
@@ -360,7 +360,7 @@ export default function SettingsPage() {
 
         {/* About */}
         <div className="rounded-xl border p-5" style={{ background: 'var(--card)', borderColor: 'var(--border)' }}>
-          <h3 className="mb-4 text-sm font-semibold" style={{ fontFamily: "'Space Mono', monospace", color: 'var(--text-secondary)' }}>
+          <h3 className="mb-4 text-sm font-semibold" style={{ fontFamily: "'JetBrains Mono', monospace", color: 'var(--text-secondary)' }}>
             About Solaris
           </h3>
           <div className="space-y-2 text-xs" style={{ color: 'var(--text-muted)' }}>

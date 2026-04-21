@@ -318,7 +318,7 @@ export default function CsvImport({ open, onClose, onImport, categories }: Props
                     <div key={i} className="flex gap-3 py-1 text-xs" style={{ borderBottom: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }}>
                       <span className="w-[75px]">{r[mapping.date]}</span>
                       <span className="flex-1">{r[mapping.desc]}</span>
-                      <span className="w-[65px] text-right" style={{ fontFamily: "'Space Mono', monospace" }}>{r[mapping.amount]}</span>
+                      <span className="w-[65px] text-right" style={{ fontFamily: "'JetBrains Mono', monospace" }}>{r[mapping.amount]}</span>
                     </div>
                   ))}
                 </div>
@@ -417,7 +417,7 @@ export default function CsvImport({ open, onClose, onImport, categories }: Props
                 <div
                   className="text-right text-xs font-bold"
                   style={{
-                    fontFamily: "'Space Mono', monospace",
+                    fontFamily: "'JetBrains Mono', monospace",
                     color: row.amount >= 0 ? '#34D399' : '#F87171',
                   }}
                 >

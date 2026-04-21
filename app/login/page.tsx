@@ -38,7 +38,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         <div className="text-center mb-10">
           <h1 className="text-3xl font-bold tracking-tight heading-gradient"
-            style={{ fontFamily: "'Space Mono', monospace" }}>
+            style={{ fontFamily: "'JetBrains Mono', monospace" }}>
             Solaris
           </h1>
           <p className="mt-2 text-sm" style={{ color: 'var(--text-muted)' }}>
@@ -72,7 +72,7 @@ export default function LoginPage() {
                 background: 'var(--bg)',
                 borderColor: 'var(--border)',
                 color: 'var(--text)',
-                fontFamily: "'DM Sans', sans-serif",
+                fontFamily: "'Space Grotesk', sans-serif",
               }}
               onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--amber)')}
               onBlur={(e) => (e.currentTarget.style.borderColor = 'var(--border)')}
@@ -94,7 +94,7 @@ export default function LoginPage() {
                 background: 'var(--bg)',
                 borderColor: 'var(--border)',
                 color: 'var(--text)',
-                fontFamily: "'DM Sans', sans-serif",
+                fontFamily: "'Space Grotesk', sans-serif",
               }}
               onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--amber)')}
               onBlur={(e) => (e.currentTarget.style.borderColor = 'var(--border)')}

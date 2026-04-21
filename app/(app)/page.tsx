@@ -15,17 +15,19 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 // Semantic chart colors — resolved hex (Recharts doesn't support CSS vars)
 const GREEN = '#34D399';
 const RED = '#F87171';
-const AMBER = '#F59E0B';
-const AMBER_WARN = '#FBBF24';
+const CYAN = '#22d3ee';
+const NEON_AMBER = '#f5a623';
+const AMBER = CYAN;
+const AMBER_WARN = NEON_AMBER;
 
 const tooltipStyle = {
-  background: '#141416', border: '1px solid #33333A', borderRadius: 8, fontSize: 12, color: '#F5F5F4',
+  background: '#0e1117', border: '1px solid #2a2f40', borderRadius: 8, fontSize: 12, color: '#f3f4f8',
 };
 
 const panelClass = "rounded-xl border p-5";
 const panelStyle = { background: 'var(--card)', borderColor: 'var(--border)' };
 const sectionHeadingClass = "mb-4 text-sm font-semibold";
-const sectionHeadingStyle = { fontFamily: "'Space Mono', monospace", color: 'var(--text-secondary)' };
+const sectionHeadingStyle = { fontFamily: "'JetBrains Mono', monospace", color: 'var(--text-secondary)' };
 
 export default function DashboardPage() {
   const supabase = createClient();
@@ -161,7 +163,7 @@ export default function DashboardPage() {
     <div>
       {/* Header */}
       <div className="mb-6">
-        <h1 className="mb-1 text-2xl font-bold heading-gradient" style={{ fontFamily: "'Space Mono', monospace" }}>
+        <h1 className="mb-1 text-2xl font-bold heading-gradient" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
           Dashboard
         </h1>
         <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Plan vs Commitments vs Reality</p>
@@ -217,7 +219,7 @@ export default function DashboardPage() {
               {activeMonthlyData.map((d) => (
                 <div key={d.month} className="text-center">
                   <div className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{d.month}</div>
-                  <div className="text-xs font-bold" style={{ fontFamily: "'Space Mono', monospace", color: d.profit >= 0 ? GREEN : RED }}>
+                  <div className="text-xs font-bold" style={{ fontFamily: "'JetBrains Mono', monospace", color: d.profit >= 0 ? GREEN : RED }}>
                     {formatMoney(d.profit)}
                   </div>
                 </div>
@@ -294,16 +296,16 @@ export default function DashboardPage() {
                           <span className="font-medium" style={{ color: 'var(--text)' }}>{row.category}</span>
                         </div>
                       </td>
-                      <td className="px-3 py-2.5 text-right" style={{ fontFamily: "'Space Mono', monospace", color: 'var(--amber)', borderBottom: '1px solid var(--border-subtle)' }}>
+                      <td className="px-3 py-2.5 text-right" style={{ fontFamily: "'JetBrains Mono', monospace", color: 'var(--amber)', borderBottom: '1px solid var(--border-subtle)' }}>
                         {row.allocated > 0 ? formatMoney(row.allocated) : '\u2014'}
                       </td>
-                      <td className="px-3 py-2.5 text-right" style={{ fontFamily: "'Space Mono', monospace", color: 'var(--amber-warn)', borderBottom: '1px solid var(--border-subtle)' }}>
+                      <td className="px-3 py-2.5 text-right" style={{ fontFamily: "'JetBrains Mono', monospace", color: 'var(--amber-warn)', borderBottom: '1px solid var(--border-subtle)' }}>
                         {row.committed > 0 ? formatMoney(row.committed) : '\u2014'}
                       </td>
-                      <td className="px-3 py-2.5 text-right" style={{ fontFamily: "'Space Mono', monospace", color: overBudget ? 'var(--red)' : 'var(--text)', fontWeight: 700, borderBottom: '1px solid var(--border-subtle)' }}>
+                      <td className="px-3 py-2.5 text-right" style={{ fontFamily: "'JetBrains Mono', monospace", color: overBudget ? 'var(--red)' : 'var(--text)', fontWeight: 700, borderBottom: '1px solid var(--border-subtle)' }}>
                         {row.actual > 0 ? formatMoney(row.actual) : '\u2014'}
                       </td>
-                      <td className="px-3 py-2.5 text-right" style={{ fontFamily: "'Space Mono', monospace", color: row.variance >= 0 ? 'var(--green)' : 'var(--red)', fontWeight: 600, borderBottom: '1px solid var(--border-subtle)' }}>
+                      <td className="px-3 py-2.5 text-right" style={{ fontFamily: "'JetBrains Mono', monospace", color: row.variance >= 0 ? 'var(--green)' : 'var(--red)', fontWeight: 600, borderBottom: '1px solid var(--border-subtle)' }}>
                         {formatMoney(row.variance)}
                       </td>
                     </tr>
@@ -313,16 +315,16 @@ export default function DashboardPage() {
                 {/* Totals Row */}
                 <tr style={{ background: 'var(--bg-elevated)' }}>
                   <td className="px-3 py-2.5 font-bold" style={{ color: 'var(--text-secondary)' }}>Total</td>
-                  <td className="px-3 py-2.5 text-right font-bold" style={{ fontFamily: "'Space Mono', monospace", color: 'var(--amber)' }}>
+                  <td className="px-3 py-2.5 text-right font-bold" style={{ fontFamily: "'JetBrains Mono', monospace", color: 'var(--amber)' }}>
                     {formatMoney(budgetVsActual.reduce((s, r) => s + r.allocated, 0))}
                   </td>
-                  <td className="px-3 py-2.5 text-right font-bold" style={{ fontFamily: "'Space Mono', monospace", color: 'var(--amber-warn)' }}>
+                  <td className="px-3 py-2.5 text-right font-bold" style={{ fontFamily: "'JetBrains Mono', monospace", color: 'var(--amber-warn)' }}>
                     {formatMoney(budgetVsActual.reduce((s, r) => s + r.committed, 0))}
                   </td>
-                  <td className="px-3 py-2.5 text-right font-bold" style={{ fontFamily: "'Space Mono', monospace", color: 'var(--red)' }}>
+                  <td className="px-3 py-2.5 text-right font-bold" style={{ fontFamily: "'JetBrains Mono', monospace", color: 'var(--red)' }}>
                     {formatMoney(budgetVsActual.reduce((s, r) => s + r.actual, 0))}
                   </td>
-                  <td className="px-3 py-2.5 text-right font-bold" style={{ fontFamily: "'Space Mono', monospace", color: budgetVsActual.reduce((s, r) => s + r.variance, 0) >= 0 ? 'var(--green)' : 'var(--red)' }}>
+                  <td className="px-3 py-2.5 text-right font-bold" style={{ fontFamily: "'JetBrains Mono', monospace", color: budgetVsActual.reduce((s, r) => s + r.variance, 0) >= 0 ? 'var(--green)' : 'var(--red)' }}>
                     {formatMoney(budgetVsActual.reduce((s, r) => s + r.variance, 0))}
                   </td>
                 </tr>
@@ -356,7 +358,7 @@ export default function DashboardPage() {
                     <div className="h-2 w-2 rounded-sm" style={{ background: cat.color }} />
                     <span className="text-xs" style={{ color: 'var(--text)' }}>{cat.name}</span>
                   </div>
-                  <span className="text-xs font-bold" style={{ fontFamily: "'Space Mono', monospace", color: 'var(--red)' }}>
+                  <span className="text-xs font-bold" style={{ fontFamily: "'JetBrains Mono', monospace", color: 'var(--red)' }}>
                     {formatMoney(cat.total)}
                   </span>
                 </div>
@@ -385,7 +387,7 @@ export default function DashboardPage() {
                     <span className="text-xs" style={{ color: 'var(--text)' }}>{cat.name}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold" style={{ fontFamily: "'Space Mono', monospace", color: 'var(--green)' }}>
+                    <span className="text-xs font-bold" style={{ fontFamily: "'JetBrains Mono', monospace", color: 'var(--green)' }}>
                       {formatMoney(cat.total)}
                     </span>
                     <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{cat.pct}%</span>
@@ -413,8 +415,8 @@ export default function DashboardPage() {
                     )}
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px]" style={{ fontFamily: "'Space Mono', monospace", color: 'var(--text-muted)' }}>{acct.percentage}%</span>
-                    <span className="text-xs font-bold" style={{ fontFamily: "'Space Mono', monospace", color: 'var(--text)' }}>
+                    <span className="text-[10px]" style={{ fontFamily: "'JetBrains Mono', monospace", color: 'var(--text-muted)' }}>{acct.percentage}%</span>
+                    <span className="text-xs font-bold" style={{ fontFamily: "'JetBrains Mono', monospace", color: 'var(--text)' }}>
                       {allocated > 0 ? formatMoney(allocated) : '\u2014'}
                     </span>
                   </div>

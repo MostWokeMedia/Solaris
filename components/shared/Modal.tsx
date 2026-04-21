@@ -45,7 +45,7 @@ export default function Modal({ open, onClose, title, wide, children }: ModalPro
         >
           <h3
             className="text-base font-bold"
-            style={{ fontFamily: "'Space Mono', monospace", color: 'var(--text)' }}
+            style={{ fontFamily: "'JetBrains Mono', monospace", color: 'var(--text)' }}
           >
             {title}
           </h3>

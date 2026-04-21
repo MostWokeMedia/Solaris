@@ -257,7 +257,7 @@ export default function TransactionsPage() {
         <div>
           <h1
             className="mb-1 text-2xl font-bold heading-gradient"
-            style={{ fontFamily: "'Space Mono', monospace" }}
+            style={{ fontFamily: "'JetBrains Mono', monospace" }}
           >
             Transactions
           </h1>
@@ -398,7 +398,7 @@ export default function TransactionsPage() {
               <div
                 className="text-right text-[13px] font-bold"
                 style={{
-                  fontFamily: "'Space Mono', monospace",
+                  fontFamily: "'JetBrains Mono', monospace",
                   color: Number(t.amount) >= 0 ? 'var(--green)' : 'var(--red)',
                 }}
               >

@@ -77,7 +77,7 @@ export default function Button({
         className
       }
       style={{
-        fontFamily: "'DM Sans', sans-serif",
+        fontFamily: "'Space Grotesk', sans-serif",
         ...getVariantStyle(variant, hover && !isDisabled),
       }}
     >

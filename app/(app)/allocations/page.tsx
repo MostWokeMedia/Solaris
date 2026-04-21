@@ -273,7 +273,7 @@ export default function AllocationsPage() {
       {/* Header */}
       <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="mb-1 text-2xl font-bold" style={{ fontFamily: "'Space Mono', monospace" }}>
+          <h1 className="mb-1 text-2xl font-bold" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
             <span className="heading-gradient">Profit First</span>
           </h1>
           <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
@@ -304,7 +304,7 @@ export default function AllocationsPage() {
         ].map((c, i) => (
           <div key={i} className="min-w-[140px] flex-1 rounded-xl border p-3" style={{ background: 'var(--card)', borderColor: 'var(--border)' }}>
             <div className="text-[10px] font-semibold uppercase" style={{ color: 'var(--text-muted)' }}>{c.label}</div>
-            <div className="mt-0.5 text-xl font-bold" style={{ fontFamily: "'Space Mono', monospace", color: c.color }}>{c.value}</div>
+            <div className="mt-0.5 text-xl font-bold" style={{ fontFamily: "'JetBrains Mono', monospace", color: c.color }}>{c.value}</div>
           </div>
         ))}
       </div>
@@ -346,7 +346,7 @@ export default function AllocationsPage() {
                     {isEditingPct ? (
                       <input autoFocus type="number" step="0.1"
                         className="w-[50px] rounded border px-1.5 py-1 text-right text-[11px] outline-none"
-                        style={{ ...inputColors, fontFamily: "'Space Mono', monospace" }}
+                        style={{ ...inputColors, fontFamily: "'JetBrains Mono', monospace" }}
                         defaultValue={acct.percentage}
                         onBlur={(e) => handleInlineSave(acct.id, 'pct', e.target.value)}
                         onKeyDown={(e) => { if (e.key === 'Enter') handleInlineSave(acct.id, 'pct', (e.target as HTMLInputElement).value); if (e.key === 'Escape') setInlineEdit(null); }}
@@ -354,7 +354,7 @@ export default function AllocationsPage() {
                     ) : (
                       <span onClick={() => setInlineEdit({ id: acct.id, field: 'pct' })}
                         className="min-w-[38px] cursor-pointer border-b border-dashed py-0.5 text-right text-[11px]"
-                        style={{ fontFamily: "'Space Mono', monospace", color: 'var(--text-muted)', borderColor: '#334155' }}
+                        style={{ fontFamily: "'JetBrains Mono', monospace", color: 'var(--text-muted)', borderColor: '#334155' }}
                         title="Click to edit %">
                         {Number(acct.percentage) > 0 ? acct.percentage + '%' : '0%'}
                       </span>
@@ -387,7 +387,7 @@ export default function AllocationsPage() {
                     return (
                       <div key={p.key} className="px-1.5 py-2 text-right text-[11px] font-medium"
                         style={{
-                          fontFamily: "'Space Mono', monospace",
+                          fontFamily: "'JetBrains Mono', monospace",
                           color: val > 0 ? '#E2E8F0' : '#334155',
                           borderLeft: p.half === 0 ? '2px solid var(--border)' : '1px solid var(--border-subtle)',
                         }}>
@@ -397,7 +397,7 @@ export default function AllocationsPage() {
                   })}
                   <div className="px-1.5 py-2 text-right text-[11px] font-bold"
                     style={{
-                      fontFamily: "'Space Mono', monospace",
+                      fontFamily: "'JetBrains Mono', monospace",
                       color: (totals.acctSums[acct.id] || 0) > 0 ? '#E2E8F0' : '#334155',
                       borderLeft: '2px solid var(--amber)', background: 'var(--bg-elevated)',
                     }}>
@@ -410,20 +410,20 @@ export default function AllocationsPage() {
             {/* Accounts Total */}
             <div style={{ display: 'grid', gridTemplateColumns: gridCols, borderTop: '2px solid #1E293B', borderBottom: '1px solid #1E293B', background: 'var(--bg-elevated)' }}>
               <div className="sticky left-0 z-[1] px-3 py-2 text-xs font-bold" style={{ background: 'var(--bg-elevated)', color: 'var(--text-secondary)', borderRight: '1px solid var(--border)' }}>
-                <span className="mr-2 text-[11px]" style={{ fontFamily: "'Space Mono', monospace", color: 'var(--text-muted)' }}>{totalPct.toFixed(1)}%</span>
+                <span className="mr-2 text-[11px]" style={{ fontFamily: "'JetBrains Mono', monospace", color: 'var(--text-muted)' }}>{totalPct.toFixed(1)}%</span>
                 Accounts Total
               </div>
               {PERIODS.map((p) => {
                 const v = computed[p.key]?.acctTotal || 0;
                 return (
                   <div key={p.key} className="px-1.5 py-2 text-right text-[11px] font-bold"
-                    style={{ fontFamily: "'Space Mono', monospace", color: v > 0 ? '#F87171' : '#334155', borderLeft: p.half === 0 ? '2px solid var(--border)' : '1px solid var(--border-subtle)' }}>
+                    style={{ fontFamily: "'JetBrains Mono', monospace", color: v > 0 ? '#F87171' : '#334155', borderLeft: p.half === 0 ? '2px solid var(--border)' : '1px solid var(--border-subtle)' }}>
                     {v > 0 ? formatMoney(v) : '\u2014'}
                   </div>
                 );
               })}
               <div className="px-1.5 py-2 text-right text-[11px] font-bold"
-                style={{ fontFamily: "'Space Mono', monospace", color: totals.acctTotal > 0 ? '#F87171' : '#334155', borderLeft: '2px solid var(--amber)' }}>
+                style={{ fontFamily: "'JetBrains Mono', monospace", color: totals.acctTotal > 0 ? '#F87171' : '#334155', borderLeft: '2px solid var(--amber)' }}>
                 {totals.acctTotal > 0 ? formatMoney(totals.acctTotal) : '\u2014'}
               </div>
             </div>
@@ -440,7 +440,7 @@ export default function AllocationsPage() {
                 <div key={p.key} className="px-1 py-1" style={{ borderLeft: p.half === 0 ? '2px solid var(--border)' : '1px solid var(--border-subtle)' }}>
                   <input type="number"
                     className="w-full rounded border px-1.5 py-1 text-right text-[11px] outline-none"
-                    style={{ ...inputColors, fontFamily: "'Space Mono', monospace" }}
+                    style={{ ...inputColors, fontFamily: "'JetBrains Mono', monospace" }}
                     value={periods[p.key]?.starting_amount || ''}
                     placeholder="0"
                     onChange={(e) => {
@@ -454,7 +454,7 @@ export default function AllocationsPage() {
                 </div>
               ))}
               <div className="px-1.5 py-2 text-right text-[11px] font-bold"
-                style={{ fontFamily: "'Space Mono', monospace", color: totals.startAmt > 0 ? '#3B82F6' : '#334155', borderLeft: '2px solid var(--amber)', background: '#1F1405' }}>
+                style={{ fontFamily: "'JetBrains Mono', monospace", color: totals.startAmt > 0 ? '#3B82F6' : '#334155', borderLeft: '2px solid var(--amber)', background: '#1F1405' }}>
                 {totals.startAmt > 0 ? formatMoney(totals.startAmt) : '\u2014'}
               </div>
             </div>
@@ -470,7 +470,7 @@ export default function AllocationsPage() {
                 return (
                   <div key={p.key} className="px-1.5 py-2 text-right text-[11px] font-semibold"
                     style={{
-                      fontFamily: "'Space Mono', monospace",
+                      fontFamily: "'JetBrains Mono', monospace",
                       color: c?.startAmt > 0 ? (v >= 0 ? '#34D399' : '#F87171') : '#334155',
                       borderLeft: p.half === 0 ? '2px solid var(--border)' : '1px solid var(--border-subtle)',
                     }}>
@@ -479,7 +479,7 @@ export default function AllocationsPage() {
                 );
               })}
               <div className="px-1.5 py-2 text-right text-[11px] font-bold"
-                style={{ fontFamily: "'Space Mono', monospace", color: totals.afterAlloc >= 0 ? '#34D399' : '#F87171', borderLeft: '2px solid var(--amber)', background: 'var(--bg-elevated)' }}>
+                style={{ fontFamily: "'JetBrains Mono', monospace", color: totals.afterAlloc >= 0 ? '#34D399' : '#F87171', borderLeft: '2px solid var(--amber)', background: 'var(--bg-elevated)' }}>
                 {totals.startAmt > 0 ? formatMoney(totals.afterAlloc) : '\u2014'}
               </div>
             </div>
@@ -495,13 +495,13 @@ export default function AllocationsPage() {
                 const v = computed[p.key]?.vaultBalance || 0;
                 return (
                   <div key={p.key} className="px-1.5 py-2 text-right text-[11px] font-bold"
-                    style={{ fontFamily: "'Space Mono', monospace", color: 'var(--green)', borderLeft: p.half === 0 ? '2px solid var(--border)' : '1px solid var(--border-subtle)' }}>
+                    style={{ fontFamily: "'JetBrains Mono', monospace", color: 'var(--green)', borderLeft: p.half === 0 ? '2px solid var(--border)' : '1px solid var(--border-subtle)' }}>
                     {v > 0 ? formatMoney(v) : '\u2014'}
                   </div>
                 );
               })}
               <div className="px-1.5 py-2 text-right text-[11px] font-bold"
-                style={{ fontFamily: "'Space Mono', monospace", color: 'var(--green)', borderLeft: '2px solid var(--amber)', background: '#0D2818' }}>
+                style={{ fontFamily: "'JetBrains Mono', monospace", color: 'var(--green)', borderLeft: '2px solid var(--amber)', background: '#0D2818' }}>
                 {totals.vaultFinal > 0 ? formatMoney(totals.vaultFinal) : '\u2014'}
               </div>
             </div>
@@ -515,7 +515,7 @@ export default function AllocationsPage() {
                 <div key={p.key} className="px-1 py-1" style={{ borderLeft: p.half === 0 ? '2px solid var(--border)' : '1px solid var(--border-subtle)' }}>
                   <input type="number"
                     className="w-full rounded border px-1.5 py-1 text-right text-[11px] outline-none"
-                    style={{ ...inputColors, fontFamily: "'Space Mono', monospace" }}
+                    style={{ ...inputColors, fontFamily: "'JetBrains Mono', monospace" }}
                     value={periods[p.key]?.vault_draw || ''}
                     placeholder="0"
                     onChange={(e) => {
@@ -529,7 +529,7 @@ export default function AllocationsPage() {
                 </div>
               ))}
               <div className="px-1.5 py-2 text-right text-[11px] font-semibold"
-                style={{ fontFamily: "'Space Mono', monospace", color: totals.draws > 0 ? '#F87171' : '#334155', borderLeft: '2px solid var(--amber)', background: 'var(--bg-elevated)' }}>
+                style={{ fontFamily: "'JetBrains Mono', monospace", color: totals.draws > 0 ? '#F87171' : '#334155', borderLeft: '2px solid var(--amber)', background: 'var(--bg-elevated)' }}>
                 {totals.draws > 0 ? formatMoney(totals.draws) : '\u2014'}
               </div>
             </div>
@@ -544,7 +544,7 @@ export default function AllocationsPage() {
                 return (
                   <div key={p.key} className="px-1.5 py-2 text-right text-[11px] font-bold"
                     style={{
-                      fontFamily: "'Space Mono', monospace",
+                      fontFamily: "'JetBrains Mono', monospace",
                       color: p.qEnd && v > 0 ? '#F59E0B' : '#334155',
                       borderLeft: p.half === 0 ? '2px solid var(--border)' : '1px solid var(--border-subtle)',
                     }}>
@@ -553,7 +553,7 @@ export default function AllocationsPage() {
                 );
               })}
               <div className="px-1.5 py-2 text-right text-[11px] font-bold"
-                style={{ fontFamily: "'Space Mono', monospace", color: 'var(--amber)', borderLeft: '2px solid var(--amber)', background: '#1A1A2E' }}>
+                style={{ fontFamily: "'JetBrains Mono', monospace", color: 'var(--amber)', borderLeft: '2px solid var(--amber)', background: '#1A1A2E' }}>
                 {'\u2014'}
               </div>
             </div>
@@ -567,13 +567,13 @@ export default function AllocationsPage() {
                 const v = computed[p.key]?.taxBalance || 0;
                 return (
                   <div key={p.key} className="px-1.5 py-2 text-right text-[11px] font-semibold"
-                    style={{ fontFamily: "'Space Mono', monospace", color: 'var(--amber)', borderLeft: p.half === 0 ? '2px solid var(--border)' : '1px solid var(--border-subtle)' }}>
+                    style={{ fontFamily: "'JetBrains Mono', monospace", color: 'var(--amber)', borderLeft: p.half === 0 ? '2px solid var(--border)' : '1px solid var(--border-subtle)' }}>
                     {v > 0 ? formatMoney(v) : '\u2014'}
                   </div>
                 );
               })}
               <div className="px-1.5 py-2 text-right text-[11px] font-bold"
-                style={{ fontFamily: "'Space Mono', monospace", color: 'var(--amber)', borderLeft: '2px solid var(--amber)', background: '#1A1500' }}>
+                style={{ fontFamily: "'JetBrains Mono', monospace", color: 'var(--amber)', borderLeft: '2px solid var(--amber)', background: '#1A1500' }}>
                 {totals.taxFinal > 0 ? formatMoney(totals.taxFinal) : '\u2014'}
               </div>
             </div>
@@ -604,7 +604,7 @@ export default function AllocationsPage() {
                     );
                   })}
                   <div className="px-1.5 py-1.5 text-center text-[10px]"
-                    style={{ fontFamily: "'Space Mono', monospace", color: 'var(--text-muted)', borderLeft: '2px solid var(--amber)', background: 'var(--bg-elevated)' }}>
+                    style={{ fontFamily: "'JetBrains Mono', monospace", color: 'var(--text-muted)', borderLeft: '2px solid var(--amber)', background: 'var(--bg-elevated)' }}>
                     {checkCount}/{PERIODS.length}
                   </div>
                 </div>
@@ -683,7 +683,7 @@ export default function AllocationsPage() {
               }
               return (
                 <SortableAccountRow key={acct.id} acct={acct}>
-                  <span className="min-w-[45px] text-right text-xs" style={{ fontFamily: "'Space Mono', monospace", color: 'var(--text-muted)' }}>
+                  <span className="min-w-[45px] text-right text-xs" style={{ fontFamily: "'JetBrains Mono', monospace", color: 'var(--text-muted)' }}>
                     {Number(acct.percentage) > 0 ? acct.percentage + '%' : '0%'}
                   </span>
                   <span className="flex-1 text-[13px] font-medium" style={{ color: 'var(--text)' }}>
