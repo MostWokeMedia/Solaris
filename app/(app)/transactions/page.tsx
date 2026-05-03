@@ -12,11 +12,10 @@ import type { Category, Transaction } from '@/types';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-const inputStyle = "w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition-colors";
-const inputColors = { background: 'var(--bg)', borderColor: 'var(--border)', color: 'var(--text)' };
-
 const GREEN = '#34D399';
 const RED = '#F87171';
+const CYAN = '#22d3ee';
+const MAGENTA = '#e879b8';
 
 type TransactionWithCategory = Transaction & { category?: Category | null };
 
@@ -28,8 +27,8 @@ export default function TransactionsPage() {
 
   // Filters
   const [searchQ, setSearchQ] = useState('');
-  const [filterType, setFilterType] = useState('All');
-  const [filterMonth, setFilterMonth] = useState('All');
+  const [filterType, setFilterType] = useState('all');
+  const [filterMonth, setFilterMonth] = useState('all');
 
   // Pagination
   const [page, setPage] = useState(0);
@@ -51,9 +50,11 @@ export default function TransactionsPage() {
     date: '', description: '', amount: '', category_id: '', note: '',
   });
 
-  const revCatIds = useMemo(() => new Set(categories.filter((c) => c.type === 'revenue').map((c) => c.id)), [categories]);
+  const revCatIds = useMemo(
+    () => new Set(categories.filter((c) => c.type === 'revenue').map((c) => c.id)),
+    [categories]
+  );
 
-  // Load data
   const loadData = useCallback(async () => {
     const [{ data: txnData }, { data: catData }] = await Promise.all([
       supabase
@@ -73,12 +74,12 @@ export default function TransactionsPage() {
   // Filter + search
   const filtered = useMemo(() => {
     let f = [...transactions];
-    if (filterMonth !== 'All') {
-      const monthIdx = MONTHS.indexOf(filterMonth) + 1;
+    if (filterMonth !== 'all') {
+      const monthIdx = parseInt(filterMonth);
       f = f.filter((t) => parseInt(t.date.split('-')[1]) === monthIdx);
     }
-    if (filterType === 'Revenue') f = f.filter((t) => t.category_id && revCatIds.has(t.category_id));
-    else if (filterType === 'Expenses') f = f.filter((t) => !t.category_id || !revCatIds.has(t.category_id));
+    if (filterType === 'revenue') f = f.filter((t) => t.category_id && revCatIds.has(t.category_id));
+    else if (filterType === 'expense') f = f.filter((t) => !t.category_id || !revCatIds.has(t.category_id));
     if (searchQ) {
       const q = searchQ.toLowerCase();
       f = f.filter((t) =>
@@ -90,7 +91,7 @@ export default function TransactionsPage() {
   }, [transactions, filterMonth, filterType, searchQ, revCatIds]);
 
   const paged = filtered.slice(page * pageSize, (page + 1) * pageSize);
-  const totalPages = Math.ceil(filtered.length / pageSize);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
 
   // Summary stats
   const totalRev = transactions
@@ -101,8 +102,8 @@ export default function TransactionsPage() {
     .filter((t) => Number(t.amount) < 0)
     .reduce((s, t) => s + Number(t.amount), 0);
   const netIncome = totalRev + totalExp;
+  const margin = totalRev ? ((netIncome / totalRev) * 100).toFixed(1) : '0';
 
-  // Transaction counts per category (for CategoryManager)
   const txnCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     transactions.forEach((t) => {
@@ -111,15 +112,16 @@ export default function TransactionsPage() {
     return counts;
   }, [transactions]);
 
-  // Active months for filter dropdown
   const activeMonths = useMemo(() => {
-    const monthSet = new Set<string>();
+    const monthSet = new Set<number>();
     transactions.forEach((t) => {
-      const mi = parseInt(t.date.split('-')[1]) - 1;
-      if (mi >= 0 && mi < 12) monthSet.add(MONTHS[mi]);
+      const mi = parseInt(t.date.split('-')[1]);
+      if (mi >= 1 && mi <= 12) monthSet.add(mi);
     });
-    return MONTHS.filter((m) => monthSet.has(m));
+    return Array.from(monthSet).sort((a, b) => a - b);
   }, [transactions]);
+
+  const uncategorizedCount = transactions.filter((t) => !t.category_id).length;
 
   // === CRUD ===
   async function handleSaveEdit() {
@@ -168,7 +170,6 @@ export default function TransactionsPage() {
     }
   }
 
-  // CSV Import
   async function handleRecategorize() {
     setRecategorizing(true);
     setRecategorizeResult('');
@@ -211,7 +212,6 @@ export default function TransactionsPage() {
     loadData();
   }
 
-  // Category CRUD
   async function handleAddCategory(name: string, type: 'revenue' | 'expense') {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
@@ -236,8 +236,12 @@ export default function TransactionsPage() {
     return 'Uncategorized';
   }
 
+  function isRevenueTxn(t: TransactionWithCategory) {
+    return !!t.category_id && revCatIds.has(t.category_id);
+  }
+
   function formatDate(iso: string): string {
-    if (!iso) return '\u2014';
+    if (!iso) return '—';
     const parts = iso.split('-');
     return MONTHS[parseInt(parts[1]) - 1] + ' ' + parseInt(parts[2]);
   }
@@ -250,192 +254,267 @@ export default function TransactionsPage() {
     );
   }
 
+  // Pagination chip range (max 5 chips around current page)
+  const pageRange = (() => {
+    const max = totalPages;
+    const cur = page + 1;
+    const start = Math.max(1, Math.min(cur - 2, max - 4));
+    const end = Math.min(max, start + 4);
+    const out: number[] = [];
+    for (let i = start; i <= end; i++) out.push(i);
+    return out;
+  })();
+
   return (
     <div>
       {/* Header */}
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1
-            className="mb-1 text-2xl font-bold heading-gradient"
-            style={{ fontFamily: "'JetBrains Mono', monospace" }}
-          >
-            Transactions
-          </h1>
-          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-            {transactions.length} total transactions
-          </p>
-        </div>
+      <div className="mb-6">
+        <div className="eyebrow">{'// transactions · ledger'}</div>
+        <h1
+          className="mt-1 text-[22px] font-semibold heading-gradient"
+          style={{ letterSpacing: '-0.02em' }}
+        >
+          Transactions
+        </h1>
       </div>
 
-      {/* Summary Cards */}
-      <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Card label="Revenue" value={formatMoney(totalRev)} accent={GREEN} />
-        <Card label="Expenses" value={formatMoney(Math.abs(totalExp))} accent={RED} />
+      {/* KPIs */}
+      <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <Card label="Revenue" value={formatMoney(totalRev)} accent={GREEN} sub="YTD 2026" />
+        <Card label="Expenses" value={formatMoney(Math.abs(totalExp))} accent={RED} sub="YTD 2026" />
         <Card
           label="Net Income"
           value={formatMoney(netIncome)}
-          accent={netIncome >= 0 ? GREEN : RED}
-          sub={totalRev ? (((netIncome / totalRev) * 100).toFixed(1) + '% margin') : undefined}
+          accent={netIncome >= 0 ? CYAN : RED}
+          sub={margin + '% margin'}
         />
-        <Card label="Transactions" value={transactions.length.toString()} accent="#818CF8" sub={activeMonths.length + ' months tracked'} />
-      </div>
-
-      {/* Toolbar */}
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        <input
-          className={inputStyle}
-          style={{ ...inputColors, maxWidth: 220 }}
-          placeholder="Search..."
-          value={searchQ}
-          onChange={(e) => { setSearchQ(e.target.value); setPage(0); }}
+        <Card
+          label="Transactions"
+          value={transactions.length.toString()}
+          accent={MAGENTA}
+          sub={activeMonths.length + ' months tracked'}
         />
-        <select
-          className={inputStyle}
-          style={{ ...inputColors, width: 'auto', minWidth: 110, cursor: 'pointer' }}
-          value={filterMonth}
-          onChange={(e) => { setFilterMonth(e.target.value); setPage(0); }}
-        >
-          <option value="All">All Months</option>
-          {activeMonths.map((m) => <option key={m}>{m}</option>)}
-        </select>
-        <select
-          className={inputStyle}
-          style={{ ...inputColors, width: 'auto', minWidth: 100, cursor: 'pointer' }}
-          value={filterType}
-          onChange={(e) => { setFilterType(e.target.value); setPage(0); }}
-        >
-          <option value="All">All Types</option>
-          <option value="Revenue">Revenue</option>
-          <option value="Expenses">Expenses</option>
-        </select>
-        <div className="flex-1" />
-        <button
-          onClick={() => setShowCatMgr(true)}
-          className="rounded-lg border-none px-4 py-2 text-xs font-semibold text-white"
-          style={{ background: 'transparent', border: '1px solid var(--amber)', color: 'var(--amber)', cursor: 'pointer' }}
-        >
-          Categories
-        </button>
-        {transactions.some((t) => !t.category_id) && (
-          <button
-            onClick={handleRecategorize}
-            disabled={recategorizing}
-            className="rounded-lg border-none px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
-            style={{ background: 'transparent', border: '1px solid var(--green)', color: 'var(--green)', cursor: 'pointer' }}
-          >
-            {recategorizing ? 'Categorizing...' : `AI Categorize (${transactions.filter((t) => !t.category_id).length})`}
-          </button>
-        )}
-        <button
-          onClick={() => setShowImport(true)}
-          className="rounded-lg border-none px-4 py-2 text-xs font-semibold text-white"
-          style={{ background: 'var(--amber-soft)', border: '1px solid var(--amber)', color: 'var(--amber)', cursor: 'pointer' }}
-        >
-          Import CSV
-        </button>
-        <button
-          onClick={() => setShowAdd(true)}
-          className="rounded-lg border-none px-4 py-2 text-xs font-semibold text-white"
-          style={{ background: 'var(--amber)', color: '#0A0A0B', cursor: 'pointer' }}
-        >
-          + Add
-        </button>
       </div>
 
-      <div className="mb-2 text-xs" style={{ color: 'var(--text-disabled)' }}>
-        {filtered.length} transactions{filtered.length !== transactions.length ? ` (filtered from ${transactions.length})` : ''}
-      </div>
+      {/* Main panel */}
+      <div className="panel">
+        <div className="panel-hdr" style={{ flexWrap: 'wrap', gap: 8 }}>
+          {/* Filter cluster */}
+          <div className="flex flex-1 flex-wrap items-center gap-2" style={{ minWidth: 0 }}>
+            <div className="relative" style={{ flex: 1, minWidth: 200, maxWidth: 320 }}>
+              <span
+                className="pointer-events-none absolute"
+                style={{ left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-disabled)' }}
+              >
+                <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                  <circle cx={11} cy={11} r={7} />
+                  <path d="M21 21l-4.35-4.35" />
+                </svg>
+              </span>
+              <input
+                className="input"
+                style={{ width: '100%', paddingLeft: 30 }}
+                placeholder="Search transactions..."
+                value={searchQ}
+                onChange={(e) => { setSearchQ(e.target.value); setPage(0); }}
+              />
+            </div>
+            <select
+              className="input"
+              value={filterMonth}
+              onChange={(e) => { setFilterMonth(e.target.value); setPage(0); }}
+            >
+              <option value="all">All months</option>
+              {activeMonths.map((m) => (
+                <option key={m} value={String(m).padStart(2, '0')}>
+                  {MONTHS[m - 1]}
+                </option>
+              ))}
+            </select>
+            <select
+              className="input"
+              value={filterType}
+              onChange={(e) => { setFilterType(e.target.value); setPage(0); }}
+            >
+              <option value="all">All types</option>
+              <option value="revenue">Revenue</option>
+              <option value="expense">Expense</option>
+            </select>
+          </div>
 
-      {recategorizeResult && (
-        <div className="mb-3 rounded-lg border px-4 py-3 text-xs"
-          style={{
-            background: recategorizeResult.includes('Categorized') ? '#0D3B2E' : '#3B2E0D',
-            borderColor: recategorizeResult.includes('Categorized') ? '#34D39933' : '#FBBF2433',
-            color: recategorizeResult.includes('Categorized') ? 'var(--green)' : 'var(--amber-warn)',
-          }}>
-          {recategorizeResult}
+          {/* Action cluster */}
+          <div className="flex flex-wrap items-center gap-2">
+            <button className="btn" onClick={() => setShowCatMgr(true)}>
+              <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                <rect x={3} y={3} width={7} height={7} /><rect x={14} y={3} width={7} height={7} />
+                <rect x={3} y={14} width={7} height={7} /><rect x={14} y={14} width={7} height={7} />
+              </svg>
+              Categories
+            </button>
+            {uncategorizedCount > 0 && (
+              <button
+                className="btn green"
+                onClick={handleRecategorize}
+                disabled={recategorizing}
+              >
+                <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                  <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+                </svg>
+                {recategorizing ? 'Categorizing...' : `AI categorize (${uncategorizedCount})`}
+              </button>
+            )}
+            <button className="btn amber" onClick={() => setShowImport(true)}>
+              <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" />
+              </svg>
+              Import CSV
+            </button>
+            <button className="btn primary" onClick={() => setShowAdd(true)}>
+              <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+              Add
+            </button>
+          </div>
         </div>
-      )}
 
-      {/* Transaction Table */}
-      <div className="overflow-hidden rounded-xl border" style={{ background: 'var(--card)', borderColor: 'var(--border)' }}>
+        {/* Pagination strip */}
         <div
-          className="grid gap-0 px-4 py-3 text-[10px] font-semibold uppercase tracking-wider"
+          className="flex flex-wrap items-center justify-between gap-2"
           style={{
-            gridTemplateColumns: '0.8fr 2fr 0.9fr 1.2fr',
-            background: 'var(--bg-elevated)',
+            padding: '10px 18px',
             borderBottom: '1px solid var(--border)',
-            color: 'var(--text-disabled)',
+            background: 'var(--bg-elevated)',
           }}
         >
-          <div>Date</div>
-          <div>Description</div>
-          <div className="text-right">Amount</div>
-          <div className="text-right">Category</div>
-        </div>
-
-        <div className="max-h-[500px] overflow-auto">
-          {paged.length === 0 && (
-            <div className="py-10 text-center text-sm" style={{ color: 'var(--text-disabled)' }}>
-              {transactions.length === 0 ? 'No transactions yet. Import a CSV or add one manually.' : 'No transactions match your filters.'}
+          <span className="eyebrow">
+            {filtered.length} {filtered.length === 1 ? 'transaction' : 'transactions'}
+            {filtered.length !== transactions.length && ` (filtered from ${transactions.length})`}
+            {totalPages > 1 && ` · page ${page + 1} of ${totalPages}`}
+          </span>
+          {totalPages > 1 && (
+            <div className="flex gap-1">
+              <button className="chip" onClick={() => setPage(0)} disabled={page === 0}>«</button>
+              <button className="chip" onClick={() => setPage(Math.max(0, page - 1))} disabled={page === 0}>Prev</button>
+              {pageRange.map((n) => (
+                <button
+                  key={n}
+                  className={'chip' + (n === page + 1 ? ' active' : '')}
+                  onClick={() => setPage(n - 1)}
+                >
+                  {n}
+                </button>
+              ))}
+              <button className="chip" onClick={() => setPage(Math.min(totalPages - 1, page + 1))} disabled={page >= totalPages - 1}>Next</button>
+              <button className="chip" onClick={() => setPage(totalPages - 1)} disabled={page >= totalPages - 1}>»</button>
             </div>
           )}
-          {paged.map((t) => (
-            <div
-              key={t.id}
-              onClick={() => { setEditTxn({ ...t }); setConfirmDel(null); }}
-              className="grid cursor-pointer items-center gap-0 px-4 py-2.5 transition-colors hover:bg-[var(--card-hover)]"
-              style={{
-                gridTemplateColumns: '0.8fr 2fr 0.9fr 1.2fr',
-                borderBottom: '1px solid var(--border-subtle)',
-              }}
-            >
-              <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>{formatDate(t.date)}</div>
-              <div>
-                <div className="text-[13px] font-medium" style={{ color: 'var(--text)' }}>{t.description}</div>
-                {t.note && <div className="mt-0.5 text-[10px]" style={{ color: 'var(--text-disabled)' }}>{t.note}</div>}
-              </div>
-              <div
-                className="text-right text-[13px] font-bold"
-                style={{
-                  fontFamily: "'JetBrains Mono', monospace",
-                  color: Number(t.amount) >= 0 ? 'var(--green)' : 'var(--red)',
-                }}
-              >
-                {formatMoney(Number(t.amount))}
-              </div>
-              <div className="text-right text-xs" style={{ color: 'var(--text-muted)' }}>
-                {getCategoryName(t)}
-              </div>
-            </div>
-          ))}
         </div>
-      </div>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="mt-3 flex items-center justify-center gap-2">
-          <button
-            onClick={() => setPage((p) => Math.max(0, p - 1))}
-            disabled={page === 0}
-            className="rounded-lg border px-3 py-1.5 text-xs font-semibold disabled:opacity-30"
-            style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)', background: 'var(--card)', cursor: 'pointer' }}
+        {/* Recategorize result banner */}
+        {recategorizeResult && (
+          <div
+            className="text-xs"
+            style={{
+              padding: '10px 18px',
+              borderBottom: '1px solid var(--border)',
+              background: recategorizeResult.includes('Categorized') ? 'oklch(0.82 0.18 155 / 0.08)' : 'oklch(0.82 0.16 80 / 0.08)',
+              color: recategorizeResult.includes('Categorized') ? 'var(--green)' : 'var(--neon-amber)',
+            }}
           >
-            Prev
-          </button>
-          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-            Page {page + 1} of {totalPages}
-          </span>
-          <button
-            onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-            disabled={page >= totalPages - 1}
-            className="rounded-lg border px-3 py-1.5 text-xs font-semibold disabled:opacity-30"
-            style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)', background: 'var(--card)', cursor: 'pointer' }}
-          >
-            Next
-          </button>
-        </div>
-      )}
+            {recategorizeResult}
+          </div>
+        )}
+
+        {/* Transaction Table */}
+        {paged.length === 0 ? (
+          <div className="py-12 text-center text-sm" style={{ color: 'var(--text-disabled)' }}>
+            {transactions.length === 0
+              ? 'No transactions yet. Import a CSV or add one manually.'
+              : 'No transactions match your filters.'}
+          </div>
+        ) : (
+          <table className="tbl">
+            <thead>
+              <tr>
+                <th style={{ width: 90 }}>Date</th>
+                <th>Description</th>
+                <th className="r" style={{ width: 140 }}>Amount</th>
+                <th style={{ width: 220 }}>Category</th>
+                <th style={{ width: 70 }}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {paged.map((t) => {
+                const isRev = isRevenueTxn(t);
+                const positive = Number(t.amount) >= 0;
+                return (
+                  <tr key={t.id} onClick={() => { setEditTxn({ ...t }); setConfirmDel(null); }}>
+                    <td className="num" style={{ color: 'var(--text-disabled)' }}>{formatDate(t.date)}</td>
+                    <td style={{ color: 'var(--text)', fontWeight: 500 }}>
+                      {t.description}
+                      {t.note && (
+                        <div style={{ marginTop: 2, fontSize: 10.5, color: 'var(--text-disabled)' }}>{t.note}</div>
+                      )}
+                    </td>
+                    <td
+                      className="r num"
+                      style={{
+                        color: positive ? 'var(--green)' : 'var(--red)',
+                        fontWeight: 600,
+                        textShadow: positive
+                          ? `0 0 calc(8px * var(--glow-k)) oklch(0.82 0.18 155 / calc(0.6 * var(--glow-k)))`
+                          : `0 0 calc(8px * var(--glow-k)) oklch(0.70 0.22 25 / calc(0.5 * var(--glow-k)))`,
+                      }}
+                    >
+                      {positive ? '+' : ''}{formatMoney(Number(t.amount))}
+                    </td>
+                    <td>
+                      <span className="cat-pill">
+                        <span
+                          className="dot"
+                          style={{
+                            background: isRev ? 'var(--green)' : 'var(--neon-amber)',
+                            boxShadow: isRev ? '0 0 6px var(--green)' : '0 0 6px var(--neon-amber)',
+                          }}
+                        />
+                        {getCategoryName(t)}
+                      </span>
+                    </td>
+                    <td>
+                      <div
+                        className="flex justify-end gap-1"
+                        style={{ opacity: 0.55 }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <button
+                          className="btn icon sm"
+                          onClick={() => { setEditTxn({ ...t }); setConfirmDel(null); }}
+                          title="Edit"
+                        >
+                          <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                            <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+                            <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+                          </svg>
+                        </button>
+                        <button
+                          className="btn icon sm"
+                          onClick={() => { setEditTxn({ ...t }); setConfirmDel(t.id); }}
+                          title="Delete"
+                        >
+                          <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                            <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" />
+                          </svg>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </div>
 
       {/* Edit Transaction Modal */}
       <Modal open={!!editTxn} onClose={() => setEditTxn(null)} title="Edit Transaction">
@@ -444,8 +523,8 @@ export default function TransactionsPage() {
             <div className="grid grid-cols-2 gap-3">
               <Field label="Date">
                 <input
-                  className={inputStyle}
-                  style={inputColors}
+                  className="input"
+                  style={{ width: '100%' }}
                   type="date"
                   value={editTxn.date}
                   onChange={(e) => setEditTxn({ ...editTxn, date: e.target.value })}
@@ -453,8 +532,8 @@ export default function TransactionsPage() {
               </Field>
               <Field label="Amount">
                 <input
-                  className={inputStyle}
-                  style={inputColors}
+                  className="input"
+                  style={{ width: '100%' }}
                   type="number"
                   step="0.01"
                   value={editTxn.amount}
@@ -464,16 +543,16 @@ export default function TransactionsPage() {
             </div>
             <Field label="Description">
               <input
-                className={inputStyle}
-                style={inputColors}
+                className="input"
+                style={{ width: '100%' }}
                 value={editTxn.description}
                 onChange={(e) => setEditTxn({ ...editTxn, description: e.target.value })}
               />
             </Field>
             <Field label="Category">
               <select
-                className={inputStyle}
-                style={{ ...inputColors, cursor: 'pointer' }}
+                className="input"
+                style={{ width: '100%' }}
                 value={editTxn.category_id || ''}
                 onChange={(e) => setEditTxn({ ...editTxn, category_id: e.target.value || null })}
               >
@@ -485,8 +564,8 @@ export default function TransactionsPage() {
             </Field>
             <Field label="Note">
               <input
-                className={inputStyle}
-                style={inputColors}
+                className="input"
+                style={{ width: '100%' }}
                 value={editTxn.note || ''}
                 onChange={(e) => setEditTxn({ ...editTxn, note: e.target.value })}
               />
@@ -495,37 +574,13 @@ export default function TransactionsPage() {
               {confirmDel === editTxn.id ? (
                 <div className="flex items-center gap-1.5">
                   <span className="text-xs" style={{ color: 'var(--red)' }}>Sure?</span>
-                  <button
-                    onClick={() => handleDelete(editTxn.id)}
-                    className="rounded border px-3 py-1 text-xs font-semibold"
-                    style={{ borderColor: '#F8717133', color: 'var(--red)', background: 'transparent', cursor: 'pointer' }}
-                  >
-                    Yes
-                  </button>
-                  <button
-                    onClick={() => setConfirmDel(null)}
-                    className="rounded border px-3 py-1 text-xs font-semibold"
-                    style={{ borderColor: 'var(--border)', color: 'var(--text-muted)', background: 'transparent', cursor: 'pointer' }}
-                  >
-                    No
-                  </button>
+                  <button className="btn red sm" onClick={() => handleDelete(editTxn.id)}>Yes</button>
+                  <button className="btn sm" onClick={() => setConfirmDel(null)}>No</button>
                 </div>
               ) : (
-                <button
-                  onClick={() => setConfirmDel(editTxn.id)}
-                  className="rounded-lg border px-4 py-2 text-sm font-semibold"
-                  style={{ borderColor: '#F8717133', color: 'var(--red)', background: 'transparent', cursor: 'pointer' }}
-                >
-                  Delete
-                </button>
+                <button className="btn red" onClick={() => setConfirmDel(editTxn.id)}>Delete</button>
               )}
-              <button
-                onClick={handleSaveEdit}
-                className="rounded-lg border-none px-5 py-2 text-sm font-semibold text-white"
-                style={{ background: 'var(--amber)', color: '#0A0A0B', cursor: 'pointer' }}
-              >
-                Save
-              </button>
+              <button className="btn primary" onClick={handleSaveEdit}>Save</button>
             </div>
           </>
         )}
@@ -536,8 +591,8 @@ export default function TransactionsPage() {
         <div className="grid grid-cols-2 gap-3">
           <Field label="Date">
             <input
-              className={inputStyle}
-              style={inputColors}
+              className="input"
+              style={{ width: '100%' }}
               type="date"
               value={newTxn.date}
               onChange={(e) => setNewTxn({ ...newTxn, date: e.target.value })}
@@ -545,8 +600,8 @@ export default function TransactionsPage() {
           </Field>
           <Field label="Amount (neg=expense)">
             <input
-              className={inputStyle}
-              style={inputColors}
+              className="input"
+              style={{ width: '100%' }}
               type="number"
               step="0.01"
               placeholder="-25.00"
@@ -557,8 +612,8 @@ export default function TransactionsPage() {
         </div>
         <Field label="Description">
           <input
-            className={inputStyle}
-            style={inputColors}
+            className="input"
+            style={{ width: '100%' }}
             placeholder="e.g. HEB groceries"
             value={newTxn.description}
             onChange={(e) => setNewTxn({ ...newTxn, description: e.target.value })}
@@ -566,8 +621,8 @@ export default function TransactionsPage() {
         </Field>
         <Field label="Category">
           <select
-            className={inputStyle}
-            style={{ ...inputColors, cursor: 'pointer' }}
+            className="input"
+            style={{ width: '100%' }}
             value={newTxn.category_id}
             onChange={(e) => setNewTxn({ ...newTxn, category_id: e.target.value })}
           >
@@ -579,28 +634,18 @@ export default function TransactionsPage() {
         </Field>
         <Field label="Note (optional)">
           <input
-            className={inputStyle}
-            style={inputColors}
+            className="input"
+            style={{ width: '100%' }}
             value={newTxn.note}
             onChange={(e) => setNewTxn({ ...newTxn, note: e.target.value })}
           />
         </Field>
         <div className="mt-2 flex justify-end gap-2">
+          <button className="btn" onClick={() => setShowAdd(false)}>Cancel</button>
           <button
-            onClick={() => setShowAdd(false)}
-            className="rounded-lg border px-4 py-2 text-sm font-semibold"
-            style={{ borderColor: 'var(--border)', color: 'var(--text-muted)', background: 'transparent', cursor: 'pointer' }}
-          >
-            Cancel
-          </button>
-          <button
+            className="btn primary"
             onClick={handleAdd}
-            className="rounded-lg border-none px-5 py-2 text-sm font-semibold text-white"
-            style={{
-              background: 'var(--amber)', color: '#0A0A0B',
-              opacity: newTxn.description.trim() && newTxn.date ? 1 : 0.4,
-              cursor: 'pointer',
-            }}
+            disabled={!newTxn.description.trim() || !newTxn.date}
           >
             Add
           </button>
