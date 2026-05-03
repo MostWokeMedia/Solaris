@@ -9,10 +9,7 @@ import type { Transaction, RecurringBill, Category } from '@/types';
 const CYAN = '#22d3ee';
 const GREEN = '#34D399';
 const RED = '#F87171';
-const MAGENTA = '#e879a8';
-
-const panelClass = "rounded-xl border p-5";
-const panelStyle = { background: 'var(--card)', borderColor: 'var(--border)' };
+const MAGENTA = '#e879b8';
 
 type Scenario = 'base' | 'optimistic' | 'pessimistic';
 
@@ -36,7 +33,6 @@ export default function ForecastPage() {
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  // Compute averages from historical data
   const stats = useMemo(() => {
     if (transactions.length === 0) return { avgDailyIncome: 0, avgDailyExpense: 0, monthlyBills: 0 };
     const months = new Set(transactions.map(t => t.date.slice(0, 7)));
@@ -47,7 +43,6 @@ export default function ForecastPage() {
     return { avgDailyIncome: income / numDays, avgDailyExpense: expense / numDays, monthlyBills };
   }, [transactions, recurringBills]);
 
-  // Generate forecast data points
   const forecast = useMemo(() => {
     const multipliers = {
       base: { income: 1, expense: 1 },
@@ -71,8 +66,6 @@ export default function ForecastPage() {
       if (d > 0) {
         balance += stats.avgDailyIncome * m.income;
         balance -= stats.avgDailyExpense * m.expense;
-
-        // Add recurring bill hits on due dates
         const dayOfMonth = date.getDate();
         recurringBills.forEach(b => {
           const dueDay = b.due_date ? new Date(b.due_date).getDate() : 0;
@@ -93,7 +86,6 @@ export default function ForecastPage() {
   const lowestPoint = Math.min(...forecast.map(p => p.balance));
   const riskDays = forecast.filter(p => p.balance < 500).length;
 
-  // SVG chart dimensions
   const W = 1040, H = 300, PAD = 50;
   const maxBal = Math.max(...forecast.map(p => p.balance), 1000);
   const minBal = Math.min(...forecast.map(p => p.balance), 0);
@@ -106,7 +98,6 @@ export default function ForecastPage() {
   const areaPath = linePath + ` L${toX(forecast.length - 1).toFixed(1)} ${(H - PAD).toFixed(1)} L${PAD} ${(H - PAD).toFixed(1)} Z`;
   const riskY = toY(500);
 
-  // Upcoming events (next 14 days of recurring bills)
   const upcomingEvents = useMemo(() => {
     const events: { name: string; date: string; daysOut: number; amount: number; type: 'expense' | 'income' }[] = [];
     const today = new Date();
@@ -123,7 +114,6 @@ export default function ForecastPage() {
         }
       });
 
-      // Weekly income assumption
       if (date.getDay() === 5) {
         events.push({ name: 'Projected Income', date: dateStr, daysOut: d, amount: stats.avgDailyIncome * 7, type: 'income' });
       }
@@ -131,59 +121,92 @@ export default function ForecastPage() {
     return events.sort((a, b) => a.daysOut - b.daysOut);
   }, [recurringBills, stats]);
 
-  if (loading) return <div className="flex h-64 items-center justify-center" style={{ color: 'var(--text-muted)' }}>Loading forecast...</div>;
+  if (loading) {
+    return (
+      <div className="flex h-64 items-center justify-center" style={{ color: 'var(--text-muted)' }}>
+        Loading forecast...
+      </div>
+    );
+  }
 
   return (
     <div>
       {/* Header */}
       <div className="mb-6">
-        <h1 className="mb-1 text-[22px] font-semibold heading-gradient" style={{ fontFamily: "'JetBrains Mono', monospace", letterSpacing: '-0.02em' }}>
+        <div className="eyebrow">{'// forecast · projected cash flow'}</div>
+        <h1
+          className="mt-1 text-[22px] font-semibold heading-gradient"
+          style={{ letterSpacing: '-0.02em' }}
+        >
           Forecast
         </h1>
-        <p className="text-[12.5px]" style={{ color: 'var(--text-disabled)' }}>Projected cash flow with scenarios</p>
+        <p className="mt-1 text-[12px]" style={{ color: 'var(--text-muted)' }}>
+          Cash flow projection across scenarios &middot; risk threshold $500
+        </p>
       </div>
 
       {/* KPIs */}
-      <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Card label="Starting Balance" value={formatMoney(startBalance)} accent={CYAN} />
-        <Card label={`Projected (${horizon}d)`} value={formatMoney(endBalance)} accent={endBalance >= startBalance ? GREEN : RED} />
-        <Card label="Lowest Point" value={formatMoney(lowestPoint)} accent={lowestPoint < 500 ? RED : GREEN} />
-        <Card label="Risk Days (<$500)" value={String(riskDays)} accent={riskDays > 0 ? RED : GREEN} sub={riskDays > 0 ? 'Action needed' : 'Clear'} />
+      <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <Card label="Starting balance" value={formatMoney(startBalance)} accent={CYAN} sub="today" />
+        <Card
+          label={`Projected (${horizon}d)`}
+          value={formatMoney(endBalance)}
+          accent={endBalance >= startBalance ? GREEN : RED}
+          sub={endBalance >= startBalance ? 'Growing' : 'Declining'}
+        />
+        <Card
+          label="Lowest point"
+          value={formatMoney(lowestPoint)}
+          accent={lowestPoint < 500 ? RED : GREEN}
+          sub="across horizon"
+        />
+        <Card
+          label="Risk days (<$500)"
+          value={String(riskDays)}
+          accent={riskDays > 0 ? RED : GREEN}
+          sub={riskDays > 0 ? 'Action needed' : 'Clear'}
+        />
       </div>
 
       {/* Chart Panel */}
-      <div className={panelClass} style={panelStyle}>
-        <div className="mb-4 flex items-center justify-between">
-          <div className="eyebrow" style={{ color: 'var(--magenta, oklch(0.72 0.22 340))' }}>// cash flow &middot; projection</div>
-          <div className="flex gap-2">
-            {/* Scenario selector */}
+      <div className="panel">
+        <div className="panel-hdr" style={{ flexWrap: 'wrap', gap: 8 }}>
+          <div>
+            <div className="eyebrow" style={{ color: MAGENTA }}>{'// cash flow · projection'}</div>
+            <p className="mt-1 text-[12px]" style={{ color: 'var(--text-muted)' }}>
+              {scenario.charAt(0).toUpperCase() + scenario.slice(1)} scenario over {horizon} days
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
             {(['base', 'optimistic', 'pessimistic'] as Scenario[]).map(s => (
-              <button key={s} onClick={() => setScenario(s)}
-                className="rounded-md px-2.5 py-1 text-[10px] font-semibold capitalize"
-                style={{
-                  background: scenario === s ? 'oklch(0.72 0.22 340 / 0.1)' : 'transparent',
-                  color: scenario === s ? MAGENTA : 'var(--text-muted)',
-                  border: scenario === s ? '1px solid oklch(0.72 0.22 340 / 0.5)' : '1px solid var(--border)',
-                  cursor: 'pointer',
-                }}>{s}</button>
+              <button
+                key={s}
+                onClick={() => setScenario(s)}
+                className={'chip' + (scenario === s ? ' active' : '')}
+                style={scenario === s ? {
+                  borderColor: 'oklch(0.72 0.22 340 / 0.5)',
+                  color: MAGENTA,
+                  background: 'oklch(0.72 0.22 340 / 0.1)',
+                  boxShadow: 'var(--glow-magenta)',
+                } : undefined}
+              >
+                {s.charAt(0).toUpperCase() + s.slice(1)}
+              </button>
             ))}
-            <div style={{ width: 1, background: 'var(--border-strong)', margin: '0 4px' }} />
-            {/* Horizon selector */}
+            <div style={{ width: 1, height: 20, background: 'var(--border-strong)', margin: '0 4px' }} />
             {[30, 60, 90, 180].map(h => (
-              <button key={h} onClick={() => setHorizon(h)}
-                className="rounded-md px-2 py-1 text-[10px] font-semibold"
-                style={{
-                  background: horizon === h ? 'var(--amber-soft)' : 'transparent',
-                  color: horizon === h ? 'var(--amber-hover)' : 'var(--text-muted)',
-                  border: horizon === h ? '1px solid var(--amber)' : '1px solid var(--border)',
-                  cursor: 'pointer',
-                }}>{h}d</button>
+              <button
+                key={h}
+                onClick={() => setHorizon(h)}
+                className={'chip' + (horizon === h ? ' active' : '')}
+              >
+                {h}d
+              </button>
             ))}
           </div>
         </div>
 
-        {/* SVG Chart */}
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto" style={{ padding: '20px 18px' }}>
           <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ minWidth: 600, height: 300 }}>
             <defs>
               <linearGradient id="forecastGrad" x1="0" y1="0" x2="0" y2="1">
@@ -196,7 +219,6 @@ export default function ForecastPage() {
               </filter>
             </defs>
 
-            {/* Risk zone */}
             {minBal < 500 && (
               <>
                 <rect x={PAD} y={riskY} width={W - PAD * 2} height={H - PAD - riskY} fill={RED} opacity={0.06} />
@@ -205,23 +227,18 @@ export default function ForecastPage() {
               </>
             )}
 
-            {/* Y-axis labels */}
             {[0, 0.25, 0.5, 0.75, 1].map(pct => {
               const val = minBal + pct * range;
               return (
-                <text key={pct} x={PAD - 8} y={toY(val) + 3} textAnchor="end" fill="#5d6274" fontSize={9} fontFamily="JetBrains Mono">
+                <text key={pct} x={PAD - 8} y={toY(val) + 3} textAnchor="end" fill="var(--text-disabled)" fontSize={9} fontFamily="JetBrains Mono">
                   ${Math.round(val / 1000)}k
                 </text>
               );
             })}
 
-            {/* Area fill */}
             <path d={areaPath} fill="url(#forecastGrad)" />
-
-            {/* Line */}
             <path d={linePath} fill="none" stroke={MAGENTA} strokeWidth={2} filter="url(#lineGlow)" />
 
-            {/* Lowest point marker */}
             {(() => {
               const lowIdx = forecast.findIndex(p => p.balance === lowestPoint);
               if (lowIdx < 0) return null;
@@ -233,9 +250,8 @@ export default function ForecastPage() {
               );
             })()}
 
-            {/* X-axis month ticks */}
             {forecast.filter((_, i) => i % Math.max(1, Math.floor(forecast.length / 6)) === 0).map((p, i) => (
-              <text key={i} x={toX(p.day)} y={H - PAD + 18} textAnchor="middle" fill="#5d6274" fontSize={9} fontFamily="JetBrains Mono">
+              <text key={i} x={toX(p.day)} y={H - PAD + 18} textAnchor="middle" fill="var(--text-disabled)" fontSize={9} fontFamily="JetBrains Mono">
                 {p.date}
               </text>
             ))}
@@ -244,73 +260,131 @@ export default function ForecastPage() {
       </div>
 
       {/* Bottom row */}
-      <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-[1fr_380px]">
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[1fr_380px]">
         {/* Upcoming Events */}
-        <div className={panelClass} style={panelStyle}>
-          <div className="eyebrow mb-4" style={{ color: 'var(--amber)' }}>// upcoming events &middot; next 14 days</div>
+        <div className="panel">
+          <div className="panel-hdr">
+            <div>
+              <div className="eyebrow" style={{ color: 'var(--neon-amber)' }}>{'// upcoming · events'}</div>
+              <p className="mt-1 text-[12px]" style={{ color: 'var(--text-muted)' }}>Next 14 days</p>
+            </div>
+            <span className="num" style={{ color: 'var(--text-muted)', fontSize: 11 }}>
+              {upcomingEvents.length} {upcomingEvents.length === 1 ? 'event' : 'events'}
+            </span>
+          </div>
           <div style={{ maxHeight: 320, overflowY: 'auto' }}>
-            {upcomingEvents.length === 0 && (
-              <div className="py-6 text-center text-xs" style={{ color: 'var(--text-disabled)' }}>No upcoming events in the next 14 days.</div>
-            )}
-            {upcomingEvents.map((ev, i) => (
-              <div key={i} className="flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors hover:bg-[var(--card-hover)]" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                <div className="min-w-[60px]">
-                  <div className="text-[11px] font-medium" style={{ fontFamily: "'JetBrains Mono', monospace", color: 'var(--text-secondary)' }}>{ev.date}</div>
-                  <div className="text-[10px]" style={{ color: 'var(--text-disabled)' }}>{ev.daysOut}d out</div>
-                </div>
-                <div className="flex-1">
-                  <div className="text-[12.5px] font-medium" style={{ color: 'var(--text)' }}>{ev.name}</div>
-                </div>
-                <span className="rounded px-2 py-0.5 text-[10px] font-semibold" style={{
-                  color: ev.type === 'income' ? GREEN : RED,
-                  background: ev.type === 'income' ? 'oklch(0.82 0.18 155 / 0.1)' : 'oklch(0.70 0.22 25 / 0.1)',
-                  border: `1px solid ${ev.type === 'income' ? 'oklch(0.82 0.18 155 / 0.35)' : 'oklch(0.70 0.22 25 / 0.35)'}`,
-                }}>{ev.type === 'income' ? 'IN' : 'OUT'}</span>
-                <div className="min-w-[80px] text-right text-[12.5px] font-semibold" style={{ fontFamily: "'JetBrains Mono', monospace", color: ev.type === 'income' ? GREEN : RED }}>
-                  {ev.type === 'income' ? '+' : '-'}{formatMoney(ev.amount)}
-                </div>
+            {upcomingEvents.length === 0 ? (
+              <div className="py-8 text-center text-xs" style={{ color: 'var(--text-disabled)' }}>
+                No upcoming events in the next 14 days.
               </div>
-            ))}
+            ) : (
+              upcomingEvents.map((ev, i) => (
+                <div
+                  key={i}
+                  className="flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-[var(--card-hover)]"
+                  style={{ borderBottom: '1px solid var(--border)' }}
+                >
+                  <div className="min-w-[60px]">
+                    <div className="num text-[11px] font-medium" style={{ color: 'var(--text-secondary)' }}>{ev.date}</div>
+                    <div className="num text-[10px]" style={{ color: 'var(--text-disabled)' }}>{ev.daysOut}d out</div>
+                  </div>
+                  <div className="flex-1 text-[12.5px] font-medium" style={{ color: 'var(--text)' }}>
+                    {ev.name}
+                  </div>
+                  <span className={'badge ' + (ev.type === 'income' ? 'good' : 'cancelled')}>
+                    <span className="dot" />
+                    {ev.type === 'income' ? 'IN' : 'OUT'}
+                  </span>
+                  <div
+                    className="num min-w-[80px] text-right text-[12.5px] font-semibold"
+                    style={{ color: ev.type === 'income' ? GREEN : RED }}
+                  >
+                    {ev.type === 'income' ? '+' : '-'}{formatMoney(ev.amount)}
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
         {/* Insights */}
-        <div className={panelClass} style={panelStyle}>
-          <div className="eyebrow mb-4" style={{ color: 'oklch(0.72 0.22 340)' }}>// scenario insights</div>
-          <p className="mb-4 text-[12.5px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-            Under the <strong style={{ color: 'var(--text)' }}>{scenario}</strong> scenario over {horizon} days, your balance
-            {endBalance >= startBalance
-              ? <> grows by <span style={{ fontFamily: "'JetBrains Mono', monospace", color: GREEN }}>{formatMoney(endBalance - startBalance)}</span>.</>
-              : <> declines by <span style={{ fontFamily: "'JetBrains Mono', monospace", color: RED }}>{formatMoney(Math.abs(endBalance - startBalance))}</span>.</>
-            }
-            {lowestPoint < 500 && <> You hit a low of <span style={{ fontFamily: "'JetBrains Mono', monospace", color: RED }}>{formatMoney(lowestPoint)}</span> — below the $500 risk threshold.</>}
-          </p>
-
-          <div className="space-y-3">
-            {riskDays > 0 && (
-              <div className="flex gap-3 rounded-lg border p-3" style={{ background: 'var(--bg-elevated)', borderColor: 'oklch(0.70 0.22 25 / 0.3)', borderLeft: '2px solid var(--red)' }}>
-                <span style={{ color: RED }}>&#x26A0;</span>
-                <div>
-                  <div className="text-[12px] font-semibold" style={{ color: 'var(--text)' }}>Risk Warning</div>
-                  <div className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>{riskDays} day{riskDays !== 1 ? 's' : ''} below $500. Consider reducing discretionary spending.</div>
-                </div>
-              </div>
-            )}
-            <div className="flex gap-3 rounded-lg border p-3" style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border)', borderLeft: '2px solid var(--amber)' }}>
-              <span style={{ color: CYAN }}>&#x24D8;</span>
-              <div>
-                <div className="text-[12px] font-semibold" style={{ color: 'var(--text)' }}>Monthly Committed</div>
-                <div className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
-                  {formatMoney(stats.monthlyBills)} in recurring bills locks {stats.avgDailyIncome > 0 ? Math.round((stats.monthlyBills / (stats.avgDailyIncome * 30)) * 100) : 0}% of projected income.
-                </div>
-              </div>
+        <div className="panel">
+          <div className="panel-hdr">
+            <div>
+              <div className="eyebrow" style={{ color: MAGENTA }}>{'// scenario · insights'}</div>
+              <p className="mt-1 text-[12px]" style={{ color: 'var(--text-muted)' }}>Reading the projection</p>
             </div>
-            <div className="flex gap-3 rounded-lg border p-3" style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border)', borderLeft: '2px solid oklch(0.82 0.18 155)' }}>
-              <span style={{ color: GREEN }}>&#x26A1;</span>
-              <div>
-                <div className="text-[12px] font-semibold" style={{ color: 'var(--text)' }}>Avg Daily Pace</div>
-                <div className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
-                  In: {formatMoney(stats.avgDailyIncome)}/day &middot; Out: {formatMoney(stats.avgDailyExpense)}/day &middot; Net: <span style={{ color: stats.avgDailyIncome - stats.avgDailyExpense >= 0 ? GREEN : RED }}>{formatMoney(stats.avgDailyIncome - stats.avgDailyExpense)}/day</span>
+          </div>
+          <div style={{ padding: 18 }}>
+            <p className="mb-4 text-[12.5px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+              Under the <strong style={{ color: 'var(--text)' }}>{scenario}</strong> scenario over {horizon} days, your balance{' '}
+              {endBalance >= startBalance ? (
+                <>grows by <span className="num" style={{ color: GREEN }}>{formatMoney(endBalance - startBalance)}</span>.</>
+              ) : (
+                <>declines by <span className="num" style={{ color: RED }}>{formatMoney(Math.abs(endBalance - startBalance))}</span>.</>
+              )}{' '}
+              {lowestPoint < 500 && (
+                <>You hit a low of <span className="num" style={{ color: RED }}>{formatMoney(lowestPoint)}</span> — below the $500 risk threshold.</>
+              )}
+            </p>
+
+            <div className="space-y-3">
+              {riskDays > 0 && (
+                <div
+                  className="flex gap-3 rounded-lg border p-3"
+                  style={{
+                    background: 'var(--bg-elevated)',
+                    borderColor: 'oklch(0.70 0.22 25 / 0.3)',
+                    borderLeft: '2px solid var(--red)',
+                  }}
+                >
+                  <span style={{ color: RED, fontSize: 14 }}>⚠</span>
+                  <div>
+                    <div className="text-[12px] font-semibold" style={{ color: 'var(--text)' }}>Risk warning</div>
+                    <div className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
+                      {riskDays} day{riskDays !== 1 ? 's' : ''} below $500. Consider reducing discretionary spending.
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div
+                className="flex gap-3 rounded-lg border p-3"
+                style={{
+                  background: 'var(--bg-elevated)',
+                  borderColor: 'var(--border)',
+                  borderLeft: '2px solid var(--cyan)',
+                }}
+              >
+                <span style={{ color: CYAN, fontSize: 14 }}>ⓘ</span>
+                <div>
+                  <div className="text-[12px] font-semibold" style={{ color: 'var(--text)' }}>Monthly committed</div>
+                  <div className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
+                    {formatMoney(stats.monthlyBills)} in recurring bills locks{' '}
+                    {stats.avgDailyIncome > 0 ? Math.round((stats.monthlyBills / (stats.avgDailyIncome * 30)) * 100) : 0}% of projected income.
+                  </div>
+                </div>
+              </div>
+              <div
+                className="flex gap-3 rounded-lg border p-3"
+                style={{
+                  background: 'var(--bg-elevated)',
+                  borderColor: 'var(--border)',
+                  borderLeft: '2px solid var(--green)',
+                }}
+              >
+                <span style={{ color: GREEN, fontSize: 14 }}>⚡</span>
+                <div>
+                  <div className="text-[12px] font-semibold" style={{ color: 'var(--text)' }}>Avg daily pace</div>
+                  <div className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
+                    In: {formatMoney(stats.avgDailyIncome)}/day &middot; Out: {formatMoney(stats.avgDailyExpense)}/day &middot;{' '}
+                    Net:{' '}
+                    <span
+                      className="num"
+                      style={{ color: stats.avgDailyIncome - stats.avgDailyExpense >= 0 ? GREEN : RED }}
+                    >
+                      {formatMoney(stats.avgDailyIncome - stats.avgDailyExpense)}/day
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>

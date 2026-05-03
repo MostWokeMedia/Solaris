@@ -11,9 +11,6 @@ const GREEN = '#34D399';
 const RED = '#F87171';
 const NEON_AMBER = '#f5a623';
 
-const panelClass = "rounded-xl border";
-const panelStyle = { background: 'var(--card)', borderColor: 'var(--border)' };
-
 type Severity = 'critical' | 'warning' | 'info';
 type Alert = {
   id: string;
@@ -30,6 +27,7 @@ type Alert = {
 };
 
 const SEVERITY_COLORS: Record<Severity, string> = { critical: RED, warning: NEON_AMBER, info: CYAN };
+const SEVERITY_BADGE: Record<Severity, string> = { critical: 'cancelled', warning: 'paused', info: 'info' };
 
 export default function AlertsPage() {
   const supabase = createClient();
@@ -55,12 +53,10 @@ export default function AlertsPage() {
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  // Generate alerts from actual data
   const alerts: Alert[] = useMemo(() => {
     const result: Alert[] = [];
     const now = new Date().toISOString();
 
-    // Check for categories where actual > committed significantly
     const expCats = categories.filter(c => c.type === 'expense');
     expCats.forEach(cat => {
       const actual = Math.abs(transactions.filter(t => t.category_id === cat.id && Number(t.amount) < 0).reduce((s, t) => s + Number(t.amount), 0));
@@ -77,12 +73,11 @@ export default function AlertsPage() {
           confidence: 92,
           timestamp: now,
           read: false,
-          cta: { label: 'View Transactions', href: '/transactions' },
+          cta: { label: 'View transactions', href: '/transactions' },
         });
       }
     });
 
-    // Check for high concentration in single revenue source
     const revCats = categories.filter(c => c.type === 'revenue');
     const totalRev = transactions.filter(t => Number(t.amount) > 0).reduce((s, t) => s + Number(t.amount), 0);
     revCats.forEach(cat => {
@@ -103,7 +98,6 @@ export default function AlertsPage() {
       }
     });
 
-    // Dining Out pace warning
     const diningCat = categories.find(c => c.name === 'Dining Out');
     if (diningCat) {
       const diningTotal = Math.abs(transactions.filter(t => t.category_id === diningCat.id && Number(t.amount) < 0).reduce((s, t) => s + Number(t.amount), 0));
@@ -122,12 +116,11 @@ export default function AlertsPage() {
           confidence: 95,
           timestamp: now,
           read: false,
-          cta: { label: 'View Dining Transactions', href: '/transactions' },
+          cta: { label: 'View dining transactions', href: '/transactions' },
         });
       }
     }
 
-    // Positive margin detection
     if (totalRev > 0) {
       const totalExp = Math.abs(transactions.filter(t => Number(t.amount) < 0).reduce((s, t) => s + Number(t.amount), 0));
       const margin = (totalRev - totalExp) / totalRev * 100;
@@ -147,7 +140,6 @@ export default function AlertsPage() {
       }
     }
 
-    // Paused bills reminder
     const pausedBills = recurringBills.filter(b => b.status === 'paused');
     if (pausedBills.length > 0) {
       const pausedTotal = pausedBills.reduce((s, b) => s + Number(b.amount), 0);
@@ -162,7 +154,7 @@ export default function AlertsPage() {
         confidence: 85,
         timestamp: now,
         read: false,
-        cta: { label: 'Manage Recurring', href: '/recurring' },
+        cta: { label: 'Manage recurring', href: '/recurring' },
       });
     }
 
@@ -171,96 +163,140 @@ export default function AlertsPage() {
 
   const filtered = filter === 'all' ? alerts : alerts.filter(a => a.severity === filter);
   const selected = alerts.find(a => a.id === selectedId) || filtered[0];
-  const counts = { all: alerts.length, critical: alerts.filter(a => a.severity === 'critical').length, warning: alerts.filter(a => a.severity === 'warning').length, info: alerts.filter(a => a.severity === 'info').length };
+  const counts = {
+    all: alerts.length,
+    critical: alerts.filter(a => a.severity === 'critical').length,
+    warning: alerts.filter(a => a.severity === 'warning').length,
+    info: alerts.filter(a => a.severity === 'info').length,
+  };
 
   function markRead(id: string) { setReadIds(prev => new Set(prev).add(id)); }
 
-  if (loading) return <div className="flex h-64 items-center justify-center" style={{ color: 'var(--text-muted)' }}>Analyzing...</div>;
+  if (loading) {
+    return (
+      <div className="flex h-64 items-center justify-center" style={{ color: 'var(--text-muted)' }}>
+        Analyzing...
+      </div>
+    );
+  }
 
   return (
     <div>
       {/* Header */}
       <div className="mb-6">
-        <h1 className="mb-1 text-[22px] font-semibold heading-gradient" style={{ fontFamily: "'JetBrains Mono', monospace", letterSpacing: '-0.02em' }}>
+        <div className="eyebrow">{'// alerts · ai inbox'}</div>
+        <h1
+          className="mt-1 text-[22px] font-semibold heading-gradient"
+          style={{ letterSpacing: '-0.02em' }}
+        >
           Alerts
         </h1>
-        <p className="text-[12.5px]" style={{ color: 'var(--text-disabled)' }}>AI-generated warnings & insights</p>
+        <p className="mt-1 text-[12px]" style={{ color: 'var(--text-muted)' }}>
+          AI-generated warnings & insights from your data
+        </p>
       </div>
 
       {/* KPIs */}
-      <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Card label="Open Alerts" value={String(alerts.length)} accent={CYAN} />
-        <Card label="Critical" value={String(counts.critical)} accent={RED} />
-        <Card label="Warnings" value={String(counts.warning)} accent={NEON_AMBER} />
-        <Card label="AI Detections" value={String(alerts.length)} accent={GREEN} />
+      <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <Card label="Open alerts" value={String(alerts.length)} accent={CYAN} sub="total" />
+        <Card label="Critical" value={String(counts.critical)} accent={RED} sub="needs action" />
+        <Card label="Warnings" value={String(counts.warning)} accent={NEON_AMBER} sub="watch" />
+        <Card label="AI detections" value={String(alerts.length)} accent={GREEN} sub="from data" />
       </div>
 
       {/* Two-pane inbox */}
       <div className="grid grid-cols-1 gap-0 lg:grid-cols-[380px_1fr]" style={{ minHeight: 500 }}>
         {/* Left: list */}
-        <div className={panelClass} style={{ ...panelStyle, borderRadius: '10px 0 0 10px', borderRight: 'none' }}>
+        <div
+          className="panel"
+          style={{ borderRadius: '12px 0 0 12px', borderRight: 'none' }}
+        >
           {/* Tabs */}
-          <div className="flex gap-1 border-b p-3" style={{ borderColor: 'var(--border)' }}>
+          <div
+            className="flex flex-wrap gap-1.5"
+            style={{ padding: '14px 14px', borderBottom: '1px solid var(--border)' }}
+          >
             {(['all', 'critical', 'warning', 'info'] as const).map(tab => (
-              <button key={tab} onClick={() => setFilter(tab)}
-                className="rounded-md px-2.5 py-1 text-[10px] font-semibold capitalize"
-                style={{
-                  background: filter === tab ? 'var(--amber-soft)' : 'transparent',
-                  color: filter === tab ? 'var(--amber-hover)' : 'var(--text-muted)',
-                  border: filter === tab ? '1px solid var(--amber)' : '1px solid transparent',
-                  cursor: 'pointer',
-                }}>
-                {tab} <span style={{ opacity: 0.5 }}>({counts[tab]})</span>
+              <button
+                key={tab}
+                onClick={() => setFilter(tab)}
+                className={'chip' + (filter === tab ? ' active' : '')}
+              >
+                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                <span className="num" style={{ opacity: 0.6, fontSize: 10 }}>{counts[tab]}</span>
               </button>
             ))}
           </div>
 
           {/* List */}
-          <div style={{ maxHeight: 440, overflowY: 'auto' }}>
-            {filtered.map(alert => {
-              const isSelected = selected?.id === alert.id;
-              const isRead = readIds.has(alert.id);
-              return (
-                <div key={alert.id}
-                  onClick={() => { setSelectedId(alert.id); markRead(alert.id); }}
-                  className="cursor-pointer px-4 py-3 transition-colors hover:bg-[var(--card-hover)]"
-                  style={{
-                    borderBottom: '1px solid var(--border-subtle)',
-                    borderLeft: isSelected ? `2px solid ${SEVERITY_COLORS[alert.severity]}` : '2px solid transparent',
-                    background: isSelected ? 'var(--card-hover)' : undefined,
-                  }}>
-                  <div className="mb-1 flex items-center gap-2">
-                    <div className="h-2 w-2 rounded-full" style={{
-                      background: SEVERITY_COLORS[alert.severity],
-                      boxShadow: !isRead ? `0 0 6px ${SEVERITY_COLORS[alert.severity]}` : undefined,
-                      opacity: isRead ? 0.4 : 1,
-                    }} />
-                    <span className="text-[12.5px] font-medium" style={{ color: isRead ? 'var(--text-muted)' : 'var(--text)' }}>{alert.title}</span>
+          <div style={{ maxHeight: 460, overflowY: 'auto' }}>
+            {filtered.length === 0 ? (
+              <div className="py-12 text-center text-xs" style={{ color: 'var(--text-disabled)' }}>
+                No alerts in this category.
+              </div>
+            ) : (
+              filtered.map(alert => {
+                const isSelected = selected?.id === alert.id;
+                const isRead = readIds.has(alert.id);
+                return (
+                  <div
+                    key={alert.id}
+                    onClick={() => { setSelectedId(alert.id); markRead(alert.id); }}
+                    className="cursor-pointer px-4 py-3 transition-colors hover:bg-[var(--card-hover)]"
+                    style={{
+                      borderBottom: '1px solid var(--border)',
+                      borderLeft: isSelected ? `2px solid ${SEVERITY_COLORS[alert.severity]}` : '2px solid transparent',
+                      background: isSelected ? 'var(--card-hover)' : undefined,
+                    }}
+                  >
+                    <div className="mb-1 flex items-center gap-2">
+                      <span
+                        className="h-2 w-2 rounded-full"
+                        style={{
+                          background: SEVERITY_COLORS[alert.severity],
+                          boxShadow: !isRead ? `0 0 6px ${SEVERITY_COLORS[alert.severity]}` : undefined,
+                          opacity: isRead ? 0.4 : 1,
+                        }}
+                      />
+                      <span
+                        className="text-[12.5px] font-medium"
+                        style={{ color: isRead ? 'var(--text-muted)' : 'var(--text)' }}
+                      >
+                        {alert.title}
+                      </span>
+                    </div>
+                    <div className="ml-4 text-[11px] leading-relaxed" style={{ color: 'var(--text-disabled)' }}>
+                      {alert.summary.slice(0, 80)}{alert.summary.length > 80 ? '...' : ''}
+                    </div>
                   </div>
-                  <div className="ml-4 text-[11px] leading-relaxed" style={{ color: 'var(--text-disabled)' }}>
-                    {alert.summary.slice(0, 80)}{alert.summary.length > 80 ? '...' : ''}
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
         </div>
 
         {/* Right: detail */}
-        <div className={panelClass + ' p-6'} style={{ ...panelStyle, borderRadius: '0 10px 10px 0' }}>
+        <div
+          className="panel"
+          style={{ borderRadius: '0 12px 12px 0', padding: 24 }}
+        >
           {selected ? (
             <>
-              <div className="mb-4 flex items-center gap-3">
-                <span className="inline-flex items-center gap-1.5 rounded px-2 py-0.5 text-[10px] font-semibold uppercase" style={{
-                  color: SEVERITY_COLORS[selected.severity],
-                  background: `${SEVERITY_COLORS[selected.severity]}18`,
-                  border: `1px solid ${SEVERITY_COLORS[selected.severity]}55`,
-                  letterSpacing: '0.04em',
-                }}>
-                  <span className="h-1.5 w-1.5 rounded-full" style={{ background: SEVERITY_COLORS[selected.severity] }} />
+              <div className="mb-4 flex items-center gap-2">
+                <span className={'badge ' + SEVERITY_BADGE[selected.severity]}>
+                  <span className="dot" />
                   {selected.severity}
                 </span>
-                <span className="rounded px-2 py-0.5 text-[10px]" style={{ background: 'var(--panel-2)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
+                <span
+                  className="rounded px-2 py-0.5 text-[10px]"
+                  style={{
+                    background: 'var(--panel-2)',
+                    color: 'var(--text-muted)',
+                    border: '1px solid var(--border)',
+                    fontFamily: 'JetBrains Mono, monospace',
+                    letterSpacing: '0.04em',
+                  }}
+                >
                   {selected.type}
                 </span>
               </div>
@@ -270,33 +306,42 @@ export default function AlertsPage() {
               <p className="mb-5 text-[12.5px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>{selected.detail}</p>
 
               {/* AI Analysis callout */}
-              <div className="mb-5 rounded-lg border p-4" style={{
-                background: 'var(--bg-elevated)',
-                borderColor: `${SEVERITY_COLORS[selected.severity]}33`,
-                borderLeft: `2px solid ${SEVERITY_COLORS[selected.severity]}`,
-              }}>
-                <div className="eyebrow mb-2" style={{ color: SEVERITY_COLORS[selected.severity] }}>// ai analysis</div>
+              <div
+                className="mb-5 rounded-lg border p-4"
+                style={{
+                  background: 'var(--bg-elevated)',
+                  borderColor: `${SEVERITY_COLORS[selected.severity]}33`,
+                  borderLeft: `2px solid ${SEVERITY_COLORS[selected.severity]}`,
+                }}
+              >
+                <div className="eyebrow mb-2" style={{ color: SEVERITY_COLORS[selected.severity] }}>
+                  {'// ai · analysis'}
+                </div>
                 <p className="text-[12.5px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                  {selected.analysis} <span className="font-semibold" style={{ fontFamily: "'JetBrains Mono', monospace", color: 'var(--text)' }}>Confidence: {selected.confidence}%</span> based on {transactions.length} historical transactions.
+                  {selected.analysis}{' '}
+                  <span className="num font-semibold" style={{ color: 'var(--text)' }}>
+                    Confidence: {selected.confidence}%
+                  </span>{' '}
+                  based on {transactions.length} historical transactions.
                 </p>
               </div>
 
               {/* Actions */}
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 {selected.cta && (
-                  <a href={selected.cta.href}
-                    className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-[12px] font-semibold"
-                    style={{
-                      background: 'var(--amber-soft)',
-                      color: 'var(--amber)',
-                      border: '1px solid var(--amber-dark)',
-                      textDecoration: 'none',
-                      cursor: 'pointer',
-                    }}>{selected.cta.label} &rarr;</a>
+                  <a
+                    href={selected.cta.href}
+                    className="btn primary"
+                    style={{ textDecoration: 'none' }}
+                  >
+                    {selected.cta.label}
+                    <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                      <path d="M5 12h14M13 5l7 7-7 7" />
+                    </svg>
+                  </a>
                 )}
-                <button className="rounded-lg px-3 py-2 text-[12px]" style={{ background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-muted)', cursor: 'pointer' }}>
-                  Dismiss
-                </button>
+                <button className="btn">Snooze 7 days</button>
+                <button className="btn">Dismiss</button>
               </div>
             </>
           ) : (
