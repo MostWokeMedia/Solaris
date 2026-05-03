@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import Card from '@/components/shared/Card';
+import PageHeader from '@/components/layout/PageHeader';
 import { formatMoney } from '@/lib/utils/money';
 import type { Transaction, RecurringBill, Category } from '@/types';
 
@@ -182,19 +183,7 @@ export default function AlertsPage() {
 
   return (
     <div>
-      {/* Header */}
-      <div className="mb-6">
-        <div className="eyebrow">{'// alerts · ai inbox'}</div>
-        <h1
-          className="mt-1 text-[22px] font-semibold heading-gradient"
-          style={{ letterSpacing: '-0.02em' }}
-        >
-          Alerts
-        </h1>
-        <p className="mt-1 text-[12px]" style={{ color: 'var(--text-muted)' }}>
-          AI-generated warnings & insights from your data
-        </p>
-      </div>
+      <PageHeader title="Alerts" eyebrow="// alerts" subtitle="AI-generated warnings & insights" />
 
       {/* KPIs */}
       <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">

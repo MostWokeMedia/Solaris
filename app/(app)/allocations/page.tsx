@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import Modal from '@/components/shared/Modal';
 import Card from '@/components/shared/Card';
+import PageHeader from '@/components/layout/PageHeader';
 import { formatMoney } from '@/lib/utils/money';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
@@ -303,21 +304,7 @@ export default function AllocationsPage() {
 
   return (
     <div>
-      {/* Header */}
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <div className="eyebrow">{'// profit first · allocation grid'}</div>
-          <h1
-            className="mt-1 text-[22px] font-semibold heading-gradient"
-            style={{ letterSpacing: '-0.02em' }}
-          >
-            Allocations
-          </h1>
-          <p className="mt-1 text-[12px]" style={{ color: 'var(--text-muted)' }}>
-            Personal allocation system &middot; {year}
-          </p>
-        </div>
-      </div>
+      <PageHeader title="Allocations" eyebrow="// allocations" subtitle="Profit First — the plan" />
 
       {/* KPIs */}
       <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">

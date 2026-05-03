@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 import Modal from '@/components/shared/Modal';
 import Field from '@/components/shared/Field';
 import Card from '@/components/shared/Card';
+import PageHeader from '@/components/layout/PageHeader';
 import CategoryManager from '@/components/shared/CategoryManager';
 import CsvImport, { type ImportedTransaction } from '@/components/transactions/CsvImport';
 import { formatMoney } from '@/lib/utils/money';
@@ -267,16 +268,11 @@ export default function TransactionsPage() {
 
   return (
     <div>
-      {/* Header */}
-      <div className="mb-6">
-        <div className="eyebrow">{'// transactions · ledger'}</div>
-        <h1
-          className="mt-1 text-[22px] font-semibold heading-gradient"
-          style={{ letterSpacing: '-0.02em' }}
-        >
-          Transactions
-        </h1>
-      </div>
+      <PageHeader
+        title="Transactions"
+        eyebrow="// transactions"
+        subtitle={`${transactions.length} total transactions`}
+      />
 
       {/* KPIs */}
       <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -394,7 +390,6 @@ export default function TransactionsPage() {
           </span>
           {totalPages > 1 && (
             <div className="flex gap-1">
-              <button className="chip" onClick={() => setPage(0)} disabled={page === 0}>«</button>
               <button className="chip" onClick={() => setPage(Math.max(0, page - 1))} disabled={page === 0}>Prev</button>
               {pageRange.map((n) => (
                 <button
@@ -406,7 +401,6 @@ export default function TransactionsPage() {
                 </button>
               ))}
               <button className="chip" onClick={() => setPage(Math.min(totalPages - 1, page + 1))} disabled={page >= totalPages - 1}>Next</button>
-              <button className="chip" onClick={() => setPage(totalPages - 1)} disabled={page >= totalPages - 1}>»</button>
             </div>
           )}
         </div>

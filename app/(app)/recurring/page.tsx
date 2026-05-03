@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 import Modal from '@/components/shared/Modal';
 import Field from '@/components/shared/Field';
 import Card from '@/components/shared/Card';
+import PageHeader from '@/components/layout/PageHeader';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { formatMoney } from '@/lib/utils/money';
 import type { RecurringBill, Category } from '@/types';
@@ -241,19 +242,11 @@ export default function RecurringPage() {
 
   return (
     <div>
-      {/* Header */}
-      <div className="mb-6">
-        <div className="eyebrow">{'// recurring · subscriptions & bills'}</div>
-        <h1
-          className="mt-1 text-[22px] font-semibold heading-gradient"
-          style={{ letterSpacing: '-0.02em' }}
-        >
-          Recurring
-        </h1>
-        <p className="mt-1 text-[12px]" style={{ color: 'var(--text-muted)' }}>
-          Click a row to edit &middot; tap a status badge to cycle Good → Paused → Cancelled
-        </p>
-      </div>
+      <PageHeader
+        title="Recurring"
+        eyebrow="// recurring"
+        subtitle="Click a row to edit · tap status badges to cycle"
+      />
 
       {/* KPIs */}
       <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">

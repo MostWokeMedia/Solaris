@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import Card from '@/components/shared/Card';
+import PageHeader from '@/components/layout/PageHeader';
 import { formatMoney } from '@/lib/utils/money';
 import type { Transaction, RecurringBill, Category } from '@/types';
 
@@ -131,19 +132,7 @@ export default function ForecastPage() {
 
   return (
     <div>
-      {/* Header */}
-      <div className="mb-6">
-        <div className="eyebrow">{'// forecast · projected cash flow'}</div>
-        <h1
-          className="mt-1 text-[22px] font-semibold heading-gradient"
-          style={{ letterSpacing: '-0.02em' }}
-        >
-          Forecast
-        </h1>
-        <p className="mt-1 text-[12px]" style={{ color: 'var(--text-muted)' }}>
-          Cash flow projection across scenarios &middot; risk threshold $500
-        </p>
-      </div>
+      <PageHeader title="Forecast" eyebrow="// forecast" subtitle="Projected cash flow with scenarios" />
 
       {/* KPIs */}
       <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -172,9 +161,15 @@ export default function ForecastPage() {
       <div className="panel">
         <div className="panel-hdr" style={{ flexWrap: 'wrap', gap: 8 }}>
           <div>
-            <div className="eyebrow" style={{ color: MAGENTA }}>{'// cash flow · projection'}</div>
-            <p className="mt-1 text-[12px]" style={{ color: 'var(--text-muted)' }}>
-              {scenario.charAt(0).toUpperCase() + scenario.slice(1)} scenario over {horizon} days
+            <div className="eyebrow" style={{ color: MAGENTA }}>{'// forecast curve'}</div>
+            <div
+              className="mt-1 text-[14px] font-semibold"
+              style={{ color: 'var(--text)', fontFamily: "'Space Grotesk', sans-serif" }}
+            >
+              Projected Cash Balance
+            </div>
+            <p className="mt-0.5 text-[12px]" style={{ color: 'var(--text-muted)' }}>
+              Based on recurring bills, scheduled income, and historic variable spending
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -265,11 +260,16 @@ export default function ForecastPage() {
         <div className="panel">
           <div className="panel-hdr">
             <div>
-              <div className="eyebrow" style={{ color: 'var(--neon-amber)' }}>{'// upcoming · events'}</div>
-              <p className="mt-1 text-[12px]" style={{ color: 'var(--text-muted)' }}>Next 14 days</p>
+              <div className="eyebrow" style={{ color: 'var(--neon-amber)' }}>{'// next 14 days'}</div>
+              <div
+                className="mt-1 text-[14px] font-semibold"
+                style={{ color: 'var(--text)', fontFamily: "'Space Grotesk', sans-serif" }}
+              >
+                Upcoming Events
+              </div>
             </div>
             <span className="num" style={{ color: 'var(--text-muted)', fontSize: 11 }}>
-              {upcomingEvents.length} {upcomingEvents.length === 1 ? 'event' : 'events'}
+              {upcomingEvents.length} scheduled
             </span>
           </div>
           <div style={{ maxHeight: 320, overflowY: 'auto' }}>
@@ -311,8 +311,13 @@ export default function ForecastPage() {
         <div className="panel">
           <div className="panel-hdr">
             <div>
-              <div className="eyebrow" style={{ color: MAGENTA }}>{'// scenario · insights'}</div>
-              <p className="mt-1 text-[12px]" style={{ color: 'var(--text-muted)' }}>Reading the projection</p>
+              <div className="eyebrow" style={{ color: MAGENTA }}>{'// scenario summary'}</div>
+              <div
+                className="mt-1 text-[14px] font-semibold"
+                style={{ color: 'var(--text)', fontFamily: "'Space Grotesk', sans-serif" }}
+              >
+                Recommendations
+              </div>
             </div>
           </div>
           <div style={{ padding: 18 }}>
